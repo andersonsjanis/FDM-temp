@@ -1,0 +1,1776 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDM-temp</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f3f2ee;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.12);
+  --head: #1d3a63;
+  --head-ink: #ffffff;
+  --accent: #2a78d6;
+  --accent-ink: #ffffff;
+  --planned: #e9e8e3;
+  --planned-edge: rgba(11,11,11,0.14);
+  --nozzle: #8d939c;
+  --nozzle-edge: #3c4148;
+  --warn-bg: #fff4dc;
+  --warn-ink: #6b4a00;
+  --err-bg: #fde8e7;
+  --err-ink: #8a1f1f;
+  --ok-ink: #006300;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --heat-flip: 0;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #232321;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255,255,255,0.12);
+    --head: #24426d;
+    --head-ink: #ffffff;
+    --accent: #3987e5;
+    --accent-ink: #ffffff;
+    --planned: #2a2a28;
+    --planned-edge: rgba(255,255,255,0.14);
+    --nozzle: #9aa0a8;
+    --nozzle-edge: #d6d9dd;
+    --warn-bg: #3a2f12;
+    --warn-ink: #f3d07a;
+    --err-bg: #3d1a1a;
+    --err-ink: #f2a3a3;
+    --ok-ink: #0ca30c;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --heat-flip: 1;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; }
+button, input, select { font: inherit; color: inherit; }
+.app { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 16px; padding: 12px 16px 24px; max-width: 1600px; margin: 0 auto; }
+@media (max-width: 980px) { .app { grid-template-columns: minmax(0, 1fr); } }
+header.top { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 16px; padding: 4px 0 8px; border-bottom: 1px solid var(--grid); }
+header.top h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: 0.1px; }
+header.top .cite { color: var(--ink-2); font-size: 12.5px; margin-top: 2px; }
+header.top .cite a { color: inherit; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn { border: 1px solid var(--border); background: var(--surface); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+.btn.primary:hover:not(:disabled) { filter: brightness(1.07); background: var(--accent); }
+.btn.big { font-size: 16px; padding: 10px 18px; }
+.btn.danger { border-color: var(--err-ink); color: var(--err-ink); }
+
+/* input panel */
+.inputs fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.inputs fieldset:disabled { opacity: 0.7; }
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+.panel > h2 { margin: 0; background: var(--head); color: var(--head-ink); font-size: 14px; font-weight: 600; text-align: center; padding: 5px 8px; letter-spacing: 0.2px; }
+.rows { padding: 6px 10px 8px; display: grid; gap: 5px; }
+.row { display: grid; grid-template-columns: 18px 1fr auto; align-items: center; gap: 6px; }
+.row label, .row .lbl { text-align: right; color: var(--ink); }
+.row .fields { display: flex; gap: 4px; justify-content: flex-end; }
+input[type=number], input[type=text] { width: 66px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--surface); text-align: right; font-variant-numeric: tabular-nums; }
+input[type=text] { text-align: left; }
+input.wide { width: 170px; }
+input[type=number] { appearance: textfield; -moz-appearance: textfield; }
+input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input.bad { border-color: var(--err-ink); background: var(--err-bg); }
+input:disabled { opacity: 0.55; }
+.unit { color: var(--ink-2); }
+.sub { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.subbox { border: 1px solid var(--grid); border-radius: 6px; padding: 5px 8px; min-width: 0; }
+.subbox .title { font-weight: 600; text-align: center; margin-bottom: 3px; }
+.radio { display: flex; gap: 10px; justify-content: center; }
+.subbox .radio { flex-direction: column; align-items: flex-start; gap: 2px; padding-left: 14px; }
+.subbox .title .info { vertical-align: middle; margin-left: 2px; }
+.subbox .info:hover::after, .subbox .info:focus::after { left: auto; right: -8px; top: 22px; }
+.radio label { display: flex; align-items: center; gap: 4px; cursor: pointer; }
+.filepick { display: flex; flex-direction: column; gap: 2px; align-items: center; justify-content: center; margin-top: 4px; min-height: 28px; }
+.filepick .btn { padding: 3px 8px; font-size: 13px; }
+.filepick .fname { font-size: 12px; color: var(--ink-2); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.info { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; border: 1.5px solid var(--ink-2); color: var(--ink-2); font: italic 600 11px/1 Georgia, serif; cursor: help; position: relative; user-select: none; }
+.info:hover::after, .info:focus::after { content: attr(data-tip); position: absolute; left: 22px; top: -4px; z-index: 30; width: 300px; padding: 7px 9px; border-radius: 6px; background: var(--ink); color: var(--surface); font: 12.5px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; font-style: normal; white-space: pre-line; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+.check { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.note { font-size: 12px; color: var(--ink-2); }
+
+/* right side */
+.main { min-width: 0; display: grid; gap: 12px; align-content: start; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+.card h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+.card .h3sub { color: var(--ink-2); font-weight: 400; font-size: 12.5px; }
+.derived { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 14px; }
+.derived div { display: flex; flex-direction: column; }
+.derived .k { font-size: 12px; color: var(--ink-2); }
+.derived .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+.view-wrap { position: relative; }
+#view { width: 100%; height: 360px; display: block; border-radius: 6px; background: var(--surface); cursor: crosshair; }
+.timebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 8px; }
+.timebar input[type=range] { flex: 1 1 240px; min-width: 160px; }
+.timebar .tread { font-variant-numeric: tabular-nums; min-width: 150px; color: var(--ink-2); }
+.legend-heat { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+#heatbar { width: 180px; height: 12px; border-radius: 3px; display: block; }
+.plots { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; }
+@media (max-width: 1250px) { .plots { grid-template-columns: minmax(0, 1fr); } }
+.plot { width: 100%; height: 280px; display: block; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 2px 0 6px; font-size: 12.5px; color: var(--ink-2); min-height: 20px; align-items: center; }
+.legend .key { display: inline-flex; align-items: center; gap: 5px; }
+.legend .line { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+.legend .x { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 0 2px; font-size: 14px; line-height: 1; }
+.legend .x:hover { color: var(--ink); }
+.probe-add { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; color: var(--ink-2); }
+.probe-add input { width: 52px; }
+.tooltip { position: absolute; pointer-events: none; z-index: 20; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(0,0,0,0.15); white-space: nowrap; display: none; }
+.tooltip .val { font-weight: 650; font-variant-numeric: tabular-nums; }
+.tooltip .sec { color: var(--ink-2); }
+.tooltip .trow { display: flex; align-items: center; gap: 6px; }
+.tooltip .tline { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
+
+/* actions + progress */
+.actions { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: stretch; }
+@media (max-width: 700px) { .actions { grid-template-columns: 1fr; } }
+.actions .run { display: flex; flex-direction: column; gap: 6px; }
+.progress { display: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--surface); }
+.progress.on { display: block; }
+.pbar { height: 14px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--grid); overflow: hidden; }
+.pbar > div { height: 100%; width: 0%; background: var(--accent); transition: width 0.12s linear; }
+.pline { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; margin-top: 5px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.pline strong { color: var(--ink); }
+.heartbeat.stale { color: var(--warn-ink); font-weight: 600; }
+.msg { border-radius: 6px; padding: 7px 10px; font-size: 13px; background: var(--surface-2); color: var(--ink); white-space: pre-line; }
+.msg.warn { background: var(--warn-bg); color: var(--warn-ink); }
+.msg.err { background: var(--err-bg); color: var(--err-ink); }
+.msg:empty { display: none; }
+.stale-banner { display: none; margin-bottom: 6px; }
+.stale-banner.on { display: block; }
+details.notes { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+details.notes summary { cursor: pointer; font-weight: 600; }
+details.notes p, details.notes li { color: var(--ink-2); font-size: 13px; }
+details.notes code { font-size: 12.5px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>FDM-temp: temperature simulation of FDM / FFF printed parts</h1>
+      <div class="cite">Based on the T4F3 model of Zhang, Van Hooreweder &amp; Ferraris (2022), Prog. Addit. Manuf. 7:971-991, <a href="https://doi.org/10.1007/s40964-022-00271-0" target="_blank" rel="noopener">doi:10.1007/s40964-022-00271-0</a>. Independent implementation, not affiliated with the authors or KU Leuven.</div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="btnSave" disabled>Save data</button>
+      <button class="btn" id="btnLoad">Load data</button>
+      <input type="file" id="fileLoad" accept=".fdmtemp,.t4f3" class="sr-only">
+      <button class="btn" id="btnCsvProbe" disabled>Export probe CSV</button>
+      <button class="btn" id="btnCsvFrame" disabled>Export frame CSV</button>
+    </div>
+  </header>
+
+  <!-- ===================== INPUTS ===================== -->
+  <div class="inputs">
+  <fieldset id="inputsFs">
+    <section class="panel">
+      <h2>Geometry</h2>
+      <div class="rows">
+        <div class="row"><span class="info" tabindex="0" data-tip="Cuboid of length L (x, print direction), width W (y) and height H (z).
+W is rounded to a whole number of strands (W / strand width) and H to a whole number of layers (H / layer thickness). The model needs at least 2 layers.">i</span>
+          <span class="lbl">length, width, height <span class="unit">[mm]</span></span>
+          <span class="fields"><input type="number" id="L" step="any" value="18"><input type="number" id="W" step="any" value="0.8"><input type="number" id="H" step="any" value="1"></span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Material properties</h2>
+      <div class="rows">
+        <div class="sub">
+          <div class="subbox">
+            <div class="title">density <span class="unit">[g/cm³]</span> <span class="info" tabindex="0" data-tip="Constant: one value.
+Dynamic: a temperature-dependent table. Text file with two columns, temperature [°C] and density [g/cm³], separated by spaces, tabs, commas or semicolons. Lines starting with # are ignored.
+Values between table points use pchip interpolation (as in the paper, Fig. 15). Each element uses ρ(T)·cp(T) at its own temperature every step.">i</span></div>
+            <div class="radio"><label><input type="radio" name="rhoMode" value="const" checked>Constant</label><label><input type="radio" name="rhoMode" value="dyn">Dynamic</label></div>
+            <div class="filepick" id="rhoConstBox"><input type="number" id="rho" step="any" value="1.226"></div>
+            <div class="filepick" id="rhoDynBox" style="display:none"><button class="btn" type="button" id="rhoPick">Load table…</button><span class="fname" id="rhoName">no file</span><input type="file" id="rhoFile" accept=".txt,.csv,.dat,.tsv" class="sr-only"></div>
+          </div>
+          <div class="subbox">
+            <div class="title">c<sub>p</sub> <span class="unit">[J/g/K]</span> <span class="info" tabindex="0" data-tip="Constant: one value.
+Dynamic: a temperature-dependent table. Text file with two columns, temperature [°C] and cp [J/g/K]. Same format and pchip interpolation as the density table.">i</span></div>
+            <div class="radio"><label><input type="radio" name="cpMode" value="const" checked>Constant</label><label><input type="radio" name="cpMode" value="dyn">Dynamic</label></div>
+            <div class="filepick" id="cpConstBox"><input type="number" id="cp" step="any" value="2"></div>
+            <div class="filepick" id="cpDynBox" style="display:none"><button class="btn" type="button" id="cpPick">Load table…</button><span class="fname" id="cpName">no file</span><input type="file" id="cpFile" accept=".txt,.csv,.dat,.tsv" class="sr-only"></div>
+          </div>
+        </div>
+        <div class="row"><span></span><label for="lam">Thermal conductivity λ<sub>x</sub> <span class="unit">[W/m/K]</span></label><span class="fields"><input type="number" id="lam" step="any" value="0.23"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Directional conductivities λy = λx·(λy/λx) and λz = λx·(λz/λx). The paper uses them to account for real bond length versus the ideal cuboid (e.g. λz = λ·Δy*/Δy). λy acts across neighbouring strands in a layer, λz across layers.">i</span>
+          <span class="lbl">Conduction anisotropy?
+            <span class="radio" style="justify-content:flex-end;margin-top:2px"><label><input type="radio" name="aniso" value="no">No</label><label><input type="radio" name="aniso" value="yes" checked>Yes</label></span></span>
+          <span class="fields" style="flex-direction:column;align-items:flex-end;gap:4px">
+            <span>λ<sub>y</sub>/λ<sub>x</sub> <input type="number" id="ry" step="any" value="0.5"></span>
+            <span>λ<sub>z</sub>/λ<sub>x</sub> <input type="number" id="rz" step="any" value="1"></span></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Whole-spectrum hemispherical emissivity. Radiation goes to the room/chamber temperature T∞ (hypothesis H4). Set 0 to switch radiation off.">i</span><label for="eps">Emissivity ε</label><span class="fields"><input type="number" id="eps" step="any" value="0.78"></span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Process parameters</h2>
+      <div class="rows">
+        <div class="row"><span class="info" tabindex="0" data-tip="Every element starts at this temperature when it is deposited (initial condition, Ti = Tn).">i</span><label for="Tn">Nozzle temp. T<sub>n</sub> <span class="unit">[°C]</span></label><span class="fields"><input type="number" id="Tn" step="any" value="200"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Build plate. Fixed-temperature (Dirichlet) boundary under the first layer.">i</span><label for="Tp">Plate temp. T<sub>p</sub> <span class="unit">[°C]</span></label><span class="fields"><input type="number" id="Tp" step="any" value="60"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Far environment (room or chamber) temperature T∞. Radiation exchanges heat with this temperature.">i</span><label for="Tinf">Room temp. T<sub>∞</sub> <span class="unit">[°C]</span></label><span class="fields"><input type="number" id="Tinf" step="any" value="25"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Air temperature above the plate, used for convection (Eq. 7):
+Ta(z) = (Tp − Ta,∞)·exp(−z / lc) + Ta,∞
+Field 1: 1 = use Eq. 7, 0 = constant Ta = Ta,∞.
+Field 2: characteristic length lc [mm] (9.443 mm in the paper).
+Field 3: air temperature far above the plate Ta,∞ [°C].
+The paper does not document these three GUI fields; this is the interpretation used here. z = k·Δz for layer k.">i</span>
+          <span class="lbl">T<sub>a</sub> = T<sub>a</sub>(z) <span class="unit">[°C]</span></span>
+          <span class="fields"><input type="number" id="TaOn" step="1" min="0" max="1" value="1" style="width:40px"><input type="number" id="lc" step="any" value="9.443"><input type="number" id="TaInf" step="any" value="25" style="width:52px"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Nozzle travel speed. Sets the time step Δt = Δx / v: one element is deposited per time step.">i</span><label for="v">Printing speed v <span class="unit">[mm/s]</span></label><span class="fields"><input type="number" id="v" step="any" value="5"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Convection coefficient during printing (one value for every exposed face). The paper uses 60 W/m²/K with the part fan at full speed and 8.5 W/m²/K for natural convection.">i</span><label for="h">Convection coeff. h <span class="unit">[W/m²/K]</span></label><span class="fields"><input type="number" id="h" step="any" value="60"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Element size in y (Δy = strand width). The number of strands per layer is W / strand width.">i</span><label for="w">Strand width w <span class="unit">[mm]</span></label><span class="fields"><input type="number" id="w" step="any" value="0.4"></span></div>
+        <div class="row"><span></span><label for="hl">Layer thickness ℏ <span class="unit">[mm]</span></label><span class="fields"><input type="number" id="hl" step="any" value="0.3"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Listed as an input in the paper (ref. 41, the T4F3 website), but the paper gives no equations for it. Not implemented in this version.">i</span><label for="tip">Wide flat nozzle tip <span class="unit">[mm]</span></label><span class="fields"><input type="number" id="tip" value="0" disabled></span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Sim. parameters</h2>
+      <div class="rows">
+        <div class="row"><span class="info" tabindex="0" data-tip="Total simulated time as a multiple of the print time t_end. 2 means printing plus the same time again for cooling (the paper uses 2·t_end as the steady state).">i</span><label for="factor">How long to run the sim. <span class="unit">[× t<sub>end</sub>]</span></label><span class="fields"><input type="number" id="factor" step="any" value="2"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Convection coefficient used after the last element is deposited (fan off). 8.5 W/m²/K is the paper's natural-convection value. Pseudocode step 11.">i</span><label for="hAfter">Natural conv. after finish? <span class="unit">[W/m²/K]</span></label><span class="fields"><input type="number" id="hAfter" step="any" value="8.5"></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Number of elements along the length. Δx = L / NL, Δt = Δx / v.
+With 'Optimise for stability' on, Δx = (Δy⁻² + Δz⁻²)^(−1/2), which minimises the Eq. 5 stability number for a given speed (the paper prints the exponent as +1/2; −1/2 is the dimensionally correct form and reproduces the original T4F3 application's default of 75).">i</span><label for="NL">Element number in x dir.</label><span class="fields"><input type="number" id="NL" step="1" min="1" value="75"></span></div>
+        <div class="row"><span></span><label class="check" style="justify-content:flex-end"><input type="checkbox" id="optStab" checked>Optimise for stability</label><span></span></div>
+        <div class="row"><span class="info" tabindex="0" data-tip="Name used for Save data and the CSV exports.">i</span><label for="fname">File name for data</label><span class="fields"><input type="text" id="fname" class="wide" value=""></span></div>
+        <div class="row"><span></span><label class="check" style="justify-content:flex-end"><input type="checkbox" id="autoName" checked>Auto file name</label><span></span></div>
+      </div>
+    </section>
+  </fieldset>
+  <details class="notes">
+    <summary>Model notes</summary>
+    <ul>
+      <li>Explicit 7-point finite-difference scheme (Eqs. 3-4) on cuboid voxel elements Δx × Δy × Δz, deposited in a zigzag: each layer starts at x = 0 on strand j = 1 (front, y = 0), strands alternate direction, every layer repeats the same path. No travel time.</li>
+      <li>Missing neighbours (not yet deposited, or outside the part) use the convection + radiation boundary of Eqs. 6-13 with the selection rules of Fig. 13. The O(Δ²) form is used when the opposite neighbour exists, otherwise the O(Δ) form. Convection uses T<sub>a</sub>(z), radiation uses T<sub>∞</sub> (footnote 3).</li>
+      <li>Fig. 13 is followed literally, including the single-wall case (W = one strand), where the left side takes the O(Δy²) form built on the right-side boundary value.</li>
+      <li>Known issue kept on purpose: the O(Δ²) boundary form doubles the exchange with the opposite neighbour, so heat is not conserved where it is used (for example the top element of each layer). This reproduces the results of the original T4F3 model; it is not a physically conservative scheme.</li>
+      <li>Checked against the paper (Set 2, constant ρ = 1.226 g/cm³, c<sub>p</sub> = 1.801 J/g/K): deposition times 141.30 / 138.60 / 34.65 s match, h = 60 vs 8.5 gives a 26 °C max difference (paper 26 °C), ε = 0.78 vs 0 gives 3.4 °C (paper 4.1 °C, with dynamic properties), and v = 60 mm/s gives ~157 °C at the inter-layer reheat (paper ~160 °C).</li>
+      <li>Storage: probes chosen before a run are recorded at every time step. The full temperature field is stored at every step when it fits in about 160 MB, otherwise every n-th step (shown after the run). Probes added after a run use the stored field.</li>
+      <li>Not implemented: wide flat nozzle tip (no equations in the paper).</li>
+    </ul>
+  </details>
+  </div>
+
+  <!-- ===================== MAIN ===================== -->
+  <div class="main">
+    <div class="card">
+      <div class="derived" id="derived"></div>
+    </div>
+
+    <div class="card">
+      <h3>Print view <span class="h3sub" id="viewSub">- preview of the element grid and print path</span></h3>
+      <div class="msg warn stale-banner" id="staleBanner">Inputs changed after this run. The view and plots show the previous run until you run again.</div>
+      <div class="view-wrap">
+        <canvas id="view" aria-label="Print view: elements coloured by temperature, with the nozzle"></canvas>
+        <div class="tooltip" id="viewTip"></div>
+      </div>
+      <div class="timebar">
+        <button class="btn" id="btnPlay" disabled>▶ Play</button>
+        <input type="range" id="slider" min="0" max="0" value="0" step="1" disabled aria-label="Time">
+        <select id="speed" class="btn" aria-label="Playback speed">
+          <option value="0.25">0.25× real time</option>
+          <option value="1" selected>1× real time</option>
+          <option value="5">5×</option>
+          <option value="20">20×</option>
+          <option value="100">100×</option>
+        </select>
+        <span class="tread" id="tread">t = -</span>
+        <span class="legend-heat"><span id="heatLo">-</span><canvas id="heatbar" width="180" height="12"></canvas><span id="heatHi">-</span><span>°C</span></span>
+      </div>
+      <div class="note" style="margin-top:6px">Hover an element for its temperature. Click an element to add or remove it as a probe (up to 5). Probes chosen before a run are recorded at every time step.</div>
+    </div>
+
+    <div class="plots">
+      <div class="card">
+        <h3>Temperature at probes <span class="h3sub">- T(t). Drag to zoom, double-click to reset, click to jump to a time.</span></h3>
+        <div class="legend" id="legend1"></div>
+        <div class="view-wrap"><canvas class="plot" id="plot1" aria-label="Temperature versus time at the probe elements"></canvas><div class="tooltip" id="tip1"></div></div>
+        <div class="probe-add">Add probe at element i <input type="number" id="pi" min="1" step="1"> j <input type="number" id="pj" min="1" step="1"> k <input type="number" id="pk" min="1" step="1"> <button class="btn" id="btnAddProbe" type="button">Add</button></div>
+      </div>
+      <div class="card">
+        <h3>Temperature vs height <span class="h3sub" id="p2sub">- probe columns at the current time</span></h3>
+        <div class="legend" id="legend2"></div>
+        <div class="view-wrap"><canvas class="plot" id="plot2" aria-label="Temperature versus height in the probe columns at the current time"></canvas><div class="tooltip" id="tip2"></div></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="btnEstimate">Estimate data size</button>
+      <button class="btn" id="btnStab">Check stability</button>
+      <div class="run">
+        <button class="btn primary big" id="btnRun">Run the simulation</button>
+        <div class="progress" id="progress" role="status" aria-live="polite">
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="pbar" style="flex:1"><div id="pfill"></div></div>
+            <strong id="ppct" style="font-variant-numeric:tabular-nums;min-width:44px;text-align:right">0%</strong>
+            <button class="btn danger" id="btnCancel">Cancel</button>
+          </div>
+          <div class="pline"><span id="pphase">Starting…</span><span id="psteps"></span></div>
+          <div class="pline"><span id="ptime"></span><span class="heartbeat" id="pbeat"></span></div>
+        </div>
+      </div>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   SOLVER (self-contained: the same source runs in a Web Worker)
+   ===================================================================== */
+function t4f3Geometry(NL, NW, NH) {
+  const N = NL * NW * NH;
+  const oi = new Int32Array(N), oj = new Int32Array(N), ok = new Int32Array(N);
+  const g2o = new Int32Array(N);              // grid index -> deposition index
+  let n = 0;
+  for (let k = 1; k <= NH; k++) {
+    for (let j = 1; j <= NW; j++) {
+      const fwd = (j % 2) === 1;              // odd strands run +x, even strands run -x
+      for (let c = 0; c < NL; c++) {
+        const i = fwd ? c + 1 : NL - c;
+        oi[n] = i; oj[n] = j; ok[n] = k;
+        g2o[((k - 1) * NW + (j - 1)) * NL + (i - 1)] = n;
+        n++;
+      }
+    }
+  }
+  const at = (i, j, k) => (i < 1 || i > NL || j < 1 || j > NW || k < 1 || k > NH) ? -1 : g2o[((k - 1) * NW + (j - 1)) * NL + (i - 1)];
+  return { N, NL, NW, NH, oi, oj, ok, g2o, at };
+}
+
+async function t4f3Solve(P, hooks) {
+  const geo = t4f3Geometry(P.NL, P.NW, P.NH);
+  const { N, NW, oi, oj, ok, at } = geo;
+  const S = P.S, stride = P.stride, dt = P.dt;
+  const xm = new Int32Array(N), xp = new Int32Array(N), ym = new Int32Array(N), yp = new Int32Array(N), zm = new Int32Array(N), zp = new Int32Array(N);
+  for (let e = 0; e < N; e++) {
+    const i = oi[e], j = oj[e], k = ok[e];
+    xm[e] = at(i - 1, j, k); xp[e] = at(i + 1, j, k);
+    ym[e] = at(i, j - 1, k); yp[e] = at(i, j + 1, k);
+    zm[e] = at(i, j, k - 1); zp[e] = at(i, j, k + 1);
+  }
+  const cx = P.dx / P.lx, cy = P.dy / P.ly, cz = P.dz / P.lz;
+  const ax = P.lx / (P.dx * P.dx), ay = P.ly / (P.dy * P.dy), az = P.lz / (P.dz * P.dz);
+  const Tn = P.Tn, Tp = P.Tp, epsSig = P.eps * 5.670e-8, TinfK4 = Math.pow(P.Tinf + 273.15, 4);
+  const TaK = new Float64Array(P.NH + 1);
+  for (let k = 1; k <= P.NH; k++) TaK[k] = P.TaOn ? (Tp - P.TaInf) * Math.exp(-(k * P.hl) / P.lc) + P.TaInf : P.TaInf;
+  const lut = P.lut, lutT0 = P.lutT0, lutInv = P.lut ? 1 / P.lutDT : 0, lutMax = P.lut ? P.lut.length - 1.000001 : 0;
+  const invRC = P.invRC;
+  const Tlo = P.Tlo, Thi = P.Thi;
+
+  let T = new Float64Array(N), U = new Float64Array(N);
+  T[0] = Tn;
+  let cnt = 1;
+  const nFramesMax = Math.floor((S - 1) / stride) + 2;
+  const frames = new Float32Array(nFramesMax * N);
+  frames.fill(NaN);
+  const frameM = new Int32Array(nFramesMax);
+  let nf = 0;
+  const record = (m) => {
+    const off = nf * N;
+    for (let e = 0; e < cnt; e++) frames[off + e] = T[e];
+    frameM[nf++] = m;
+  };
+  // probes chosen before the run: recorded at every probeStride steps (normally every step)
+  const pE = P.probeE || [], np = pE.length, pStride = P.probeStride || 1;
+  const nPmax = Math.floor((S - 1) / pStride) + 2;
+  const pBuf = new Float32Array(np * nPmax), pM = new Int32Array(nPmax);
+  let npf = 0;
+  const recordP = (m) => {
+    for (let q = 0; q < np; q++) { const e = pE[q]; pBuf[q * nPmax + npf] = e < cnt ? T[e] : NaN; }
+    pM[npf++] = m;
+  };
+  const work = (m) => { const s = m - 1; return s <= N ? s * (s + 1) / 2 : N * (N + 1) / 2 + (s - N) * N; };
+  const totalWork = work(S);
+  record(1); recordP(1);
+
+  let m = 1, status = 'done', message = '';
+  const t0 = performance.now();
+  let lastLive = -1e9;
+  outer:
+  while (m < S) {
+    const chunkEnd = performance.now() + 35;
+    while (m < S) {
+      const hh = m < N ? P.h : P.hAfter;
+      let bad = false;
+      for (let e = 0; e < cnt; e++) {
+        const Te = T[e], k = ok[e];
+        const TK = Te + 273.15, TK2 = TK * TK;
+        const q = hh * (Te - TaK[k]) + epsSig * (TK2 * TK2 - TinfK4);   // outward flux, W/m2
+        // x: back (i-1) / front (i+1)
+        const a = xm[e], b = xp[e];
+        const aR = a >= 0 && a < cnt, bR = b >= 0 && b < cnt;
+        let Tb, Tf;
+        if (aR) Tb = T[a]; else if (bR) Tb = T[b] - 2 * cx * q; else Tb = Te - cx * q;
+        if (bR) Tf = T[b]; else if (aR) Tf = T[a] - 2 * cx * q; else Tf = Te - cx * q;
+        // y: right (j-1) / left (j+1)
+        const r = ym[e], l = yp[e];
+        const rR = r >= 0 && r < cnt, lR = l >= 0 && l < cnt;
+        let Tr, Tl;
+        if (rR) Tr = T[r]; else if (lR) Tr = T[l] - 2 * cy * q; else Tr = Te - cy * q;
+        if (lR) Tl = T[l]; else if (oj[e] === NW) Tl = Tr - 2 * cy * q; else if (rR) Tl = T[r] - 2 * cy * q; else Tl = Te - cy * q;
+        // z: down (k-1, plate for k = 1) / up (k+1)
+        const Td = k === 1 ? Tp : T[zm[e]];
+        const u = zp[e];
+        let Tu;
+        if (u >= 0 && u < cnt) Tu = T[u]; else if (k === 1) Tu = Te - cz * q; else Tu = Td - 2 * cz * q;
+        let inv = invRC;
+        if (lut) {
+          let x = (Te - lutT0) * lutInv;
+          if (x < 0) x = 0; else if (x > lutMax) x = lutMax;
+          const i0 = x | 0;
+          inv = lut[i0] + (lut[i0 + 1] - lut[i0]) * (x - i0);
+        }
+        const lap = ax * (Tb - 2 * Te + Tf) + ay * (Tr - 2 * Te + Tl) + az * (Td - 2 * Te + Tu);
+        const val = Te + dt * inv * lap;
+        U[e] = val;
+        if (!(val > Tlo && val < Thi)) bad = true;
+      }
+      if (cnt < N) { U[cnt] = Tn; cnt++; }
+      const tmp = T; T = U; U = tmp;
+      m++;
+      if ((m - 1) % stride === 0 || m === S) record(m);
+      if (np && ((m - 1) % pStride === 0 || m === S)) recordP(m);
+      if (bad) {
+        status = 'unstable';
+        message = 'Numerical instability at step ' + m + ' (t = ' + (m * dt).toFixed(3) + ' s): a temperature left the physical range.';
+        break outer;
+      }
+      if (performance.now() > chunkEnd) break;
+    }
+    const now = performance.now();
+    let live = null;
+    if (now - lastLive > 200) { live = new Float32Array(T.subarray(0, cnt)); lastLive = now; }
+    hooks.progress({ m, S, cnt, N, work: work(m), totalWork, elapsed: (now - t0) / 1000, live });
+    await hooks.yield();
+    if (hooks.cancelled()) { status = 'cancelled'; break; }
+  }
+  if (frameM[nf - 1] !== m) record(m);
+  if (np && pM[npf - 1] !== m) recordP(m);
+  const pData = new Float32Array(np * npf);
+  for (let q = 0; q < np; q++) pData.set(pBuf.subarray(q * nPmax, q * nPmax + npf), q * npf);
+  return { frames, frameM, nf, N, lastM: m, status, message, elapsed: (performance.now() - t0) / 1000, totalWork, doneWork: work(m),
+           probeE: Int32Array.from(pE), pData, pM: pM.slice(0, npf), npf };
+}
+
+function t4f3WorkerMain() {
+  let cancel = false;
+  const ch = new MessageChannel();
+  let resolver = null;
+  ch.port1.onmessage = () => { const r = resolver; resolver = null; if (r) r(); };
+  const yieldFn = () => new Promise(res => { resolver = res; ch.port2.postMessage(0); });
+  self.onmessage = async (ev) => {
+    const d = ev.data;
+    if (d.cmd === 'cancel') { cancel = true; return; }
+    if (d.cmd === 'ping') { self.postMessage({ type: 'pong' }); return; }
+    if (d.cmd === 'run') {
+      cancel = false;
+      try {
+        const out = await t4f3Solve(d.P, {
+          progress: (p) => self.postMessage(Object.assign({ type: 'progress' }, p), p.live ? [p.live.buffer] : []),
+          yield: yieldFn,
+          cancelled: () => cancel
+        });
+        self.postMessage(Object.assign({ type: 'done' }, out), [out.frames.buffer, out.frameM.buffer, out.pData.buffer, out.pM.buffer]);
+      } catch (err) {
+        self.postMessage({ type: 'error', message: String((err && err.message) || err) });
+      }
+    }
+  };
+}
+
+/* =====================================================================
+   UTILITIES
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+function fmt(x, d = 3) {
+  if (!isFinite(x)) return '-';
+  const a = Math.abs(x);
+  if (a !== 0 && (a < 1e-3 || a >= 1e6)) return x.toExponential(2);
+  return (+x.toFixed(d)).toString();
+}
+function fmtTime(s) {
+  if (!isFinite(s)) return '-';
+  if (s < 60) return s.toFixed(s < 10 ? 2 : 1) + ' s';
+  const m = Math.floor(s / 60), r = s - 60 * m;
+  if (m < 60) return m + ' min ' + r.toFixed(0) + ' s';
+  return Math.floor(m / 60) + ' h ' + (m % 60) + ' min';
+}
+function fmtBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' kB';
+  if (b < 1024 ** 3) return (b / 1024 / 1024).toFixed(1) + ' MB';
+  return (b / 1024 ** 3).toFixed(2) + ' GB';
+}
+function fmtCount(n) {
+  if (n < 1e3) return String(Math.round(n));
+  if (n < 1e6) return (n / 1e3).toFixed(1) + 'k';
+  if (n < 1e9) return (n / 1e6).toFixed(1) + 'M';
+  return (n / 1e9).toFixed(2) + 'G';
+}
+function niceTicks(lo, hi, n) {
+  if (!(hi > lo)) { hi = lo + 1; }
+  const step0 = (hi - lo) / Math.max(1, n);
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const r = step0 / mag;
+  const step = (r < 1.5 ? 1 : r < 3 ? 2 : r < 7 ? 5 : 10) * mag;
+  const out = [];
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + step * 1e-9; v += step) out.push(+v.toFixed(10));
+  return { ticks: out, step };
+}
+function setupCanvas(c) {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  const w = Math.max(10, Math.round(r.width)), h = Math.max(10, Math.round(r.height));
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+function download(name, blob) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function setMsg(text, kind) { const m = $('msg'); m.textContent = text || ''; m.className = 'msg' + (kind ? ' ' + kind : ''); }
+
+/* =====================================================================
+   THEME + HEAT COLOUR MAP (single warm ramp, OKLCH, monotone lightness)
+   ===================================================================== */
+let theme = {};
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  const g = (n) => cs.getPropertyValue(n).trim();
+  theme = {
+    surface: g('--surface'), surface2: g('--surface-2'), ink: g('--ink'), ink2: g('--ink-2'), muted: g('--muted'),
+    grid: g('--grid'), axis: g('--axis'), planned: g('--planned'), plannedEdge: g('--planned-edge'),
+    nozzle: g('--nozzle'), nozzleEdge: g('--nozzle-edge'),
+    series: [g('--series-1'), g('--series-2'), g('--series-3'), g('--series-4'), g('--series-5')],
+    flip: g('--heat-flip') === '1'
+  };
+  buildHeat();
+}
+function oklchToRgb(L, C, hdeg) {
+  const h = hdeg * Math.PI / 180, a = C * Math.cos(h), b = C * Math.sin(h);
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b, m_ = L - 0.1055613458 * a - 0.0638541728 * b, s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+  const l = l_ ** 3, m = m_ ** 3, s = s_ ** 3;
+  const lin = [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s, -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s, -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s];
+  return lin.map(x => { x = clamp(x, 0, 1); return Math.round(255 * (x <= 0.0031308 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055)); });
+}
+// stops from cool (t = 0) to hot (t = 1) for the light surface; dark mode uses the same ramp reversed
+const HEAT_STOPS = [[0.93, 0.045, 95], [0.83, 0.12, 82], [0.70, 0.165, 58], [0.55, 0.175, 38], [0.38, 0.13, 26]];
+let heatCss = [], heatRgb = [];
+function buildHeat() {
+  heatCss = []; heatRgb = [];
+  for (let n = 0; n < 256; n++) {
+    let t = n / 255; if (theme.flip) t = 1 - t;
+    const p = t * (HEAT_STOPS.length - 1), i = Math.min(HEAT_STOPS.length - 2, Math.floor(p)), f = p - i;
+    const A = HEAT_STOPS[i], B = HEAT_STOPS[i + 1];
+    const rgb = oklchToRgb(A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f, A[2] + (B[2] - A[2]) * f);
+    heatRgb.push(rgb); heatCss.push('rgb(' + rgb.join(',') + ')');
+  }
+}
+let heatRange = [25, 200];
+function heatIndex(T) { return clamp(Math.round((T - heatRange[0]) / (heatRange[1] - heatRange[0]) * 255), 0, 255); }
+function shade(rgb, k) { // k > 0 lighten, k < 0 darken
+  return 'rgb(' + rgb.map(c => Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k))).join(',') + ')';
+}
+function drawHeatbar() {
+  const c = $('heatbar'), ctx = c.getContext('2d');
+  for (let x = 0; x < c.width; x++) { ctx.fillStyle = heatCss[Math.round(x / (c.width - 1) * 255)]; ctx.fillRect(x, 0, 1, c.height); }
+  $('heatLo').textContent = fmt(heatRange[0], 1);
+  $('heatHi').textContent = fmt(heatRange[1], 1);
+}
+
+/* =====================================================================
+   MATERIAL TABLES (pchip, as MATLAB's 'pchip')
+   ===================================================================== */
+const tables = { rho: null, cp: null };
+function parseTable(text) {
+  const pts = [];
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line[0] === '#' || line[0] === '%') continue;
+    const parts = line.split(/[\s,;]+/).map(Number);
+    if (parts.length >= 2 && isFinite(parts[0]) && isFinite(parts[1])) pts.push([parts[0], parts[1]]);
+  }
+  pts.sort((a, b) => a[0] - b[0]);
+  const T = [], v = [];
+  for (const p of pts) { if (T.length && p[0] === T[T.length - 1]) continue; T.push(p[0]); v.push(p[1]); }
+  if (T.length < 2) throw new Error('needs at least two numeric rows (temperature, value)');
+  return { T, v };
+}
+function pchip(xs, ys) {
+  const n = xs.length, h = [], d = [], m = new Array(n);
+  for (let i = 0; i < n - 1; i++) { h[i] = xs[i + 1] - xs[i]; d[i] = (ys[i + 1] - ys[i]) / h[i]; }
+  const endSlope = (h0, h1, d0, d1) => {
+    let s = ((2 * h0 + h1) * d0 - h0 * d1) / (h0 + h1);
+    if (Math.sign(s) !== Math.sign(d0)) s = 0;
+    else if (Math.sign(d0) !== Math.sign(d1) && Math.abs(s) > Math.abs(3 * d0)) s = 3 * d0;
+    return s;
+  };
+  if (n === 2) { m[0] = m[1] = d[0]; }
+  else {
+    for (let i = 1; i < n - 1; i++) {
+      if (d[i - 1] * d[i] <= 0) m[i] = 0;
+      else { const w1 = 2 * h[i] + h[i - 1], w2 = h[i] + 2 * h[i - 1]; m[i] = (w1 + w2) / (w1 / d[i - 1] + w2 / d[i]); }
+    }
+    m[0] = endSlope(h[0], h[1], d[0], d[1]);
+    m[n - 1] = endSlope(h[n - 2], h[n - 3], d[n - 2], d[n - 3]);
+  }
+  return (x) => {
+    let lo = 0, hi = n - 2;
+    if (x <= xs[0]) lo = 0; else if (x >= xs[n - 1]) lo = n - 2;
+    else { while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (xs[mid] <= x) lo = mid; else hi = mid - 1; } }
+    const hh = h[lo], s = (x - xs[lo]) / hh;
+    const h00 = (1 + 2 * s) * (1 - s) * (1 - s), h10 = s * (1 - s) * (1 - s), h01 = s * s * (3 - 2 * s), h11 = s * s * (s - 1);
+    return ys[lo] * h00 + hh * m[lo] * h10 + ys[lo + 1] * h01 + hh * m[lo + 1] * h11;
+  };
+}
+
+/* =====================================================================
+   PARAMETERS
+   ===================================================================== */
+const NUM_IDS = ['L', 'W', 'H', 'rho', 'cp', 'lam', 'ry', 'rz', 'eps', 'Tn', 'Tp', 'Tinf', 'TaOn', 'lc', 'TaInf', 'v', 'h', 'w', 'hl', 'factor', 'hAfter', 'NL'];
+const radioVal = (name) => (document.querySelector('input[name="' + name + '"]:checked') || {}).value;
+function uiValues() {
+  const o = {};
+  for (const id of NUM_IDS) o[id] = $(id).value;
+  o.rhoMode = radioVal('rhoMode'); o.cpMode = radioVal('cpMode'); o.aniso = radioVal('aniso');
+  o.optStab = $('optStab').checked; o.autoName = $('autoName').checked; o.fname = $('fname').value;
+  return o;
+}
+function setUiValues(o) {
+  for (const id of NUM_IDS) if (o[id] !== undefined) $(id).value = o[id];
+  for (const nm of ['rhoMode', 'cpMode', 'aniso']) if (o[nm]) { const el = document.querySelector('input[name="' + nm + '"][value="' + o[nm] + '"]'); if (el) el.checked = true; }
+  if (o.optStab !== undefined) $('optStab').checked = o.optStab;
+  if (o.autoName !== undefined) $('autoName').checked = o.autoName;
+  if (o.fname !== undefined) $('fname').value = o.fname;
+}
+
+// returns { P, errors, warnings } ; P contains everything the solver needs (SI where noted)
+function readParams() {
+  const errors = [], warnings = [];
+  const bad = new Set();
+  const num = (id, cond, msg) => {
+    const v = parseFloat($(id).value);
+    if (!isFinite(v) || (cond && !cond(v))) { bad.add(id); errors.push(msg); }
+    return v;
+  };
+  const pos = (x) => x > 0;
+  const L = num('L', pos, 'Length must be > 0.'), W = num('W', pos, 'Width must be > 0.'), H = num('H', pos, 'Height must be > 0.');
+  const w = num('w', pos, 'Strand width must be > 0.'), hl = num('hl', pos, 'Layer thickness must be > 0.');
+  const v = num('v', pos, 'Printing speed must be > 0.');
+  const lam = num('lam', pos, 'Thermal conductivity must be > 0.');
+  const aniso = radioVal('aniso') === 'yes';
+  const ry = aniso ? num('ry', pos, 'λy/λx must be > 0.') : 1;
+  const rz = aniso ? num('rz', pos, 'λz/λx must be > 0.') : 1;
+  const eps = num('eps', (x) => x >= 0 && x <= 1, 'Emissivity must be between 0 and 1.');
+  const Tn = num('Tn', null, 'Nozzle temperature is not a number.'), Tp = num('Tp', null, 'Plate temperature is not a number.'), Tinf = num('Tinf', null, 'Room temperature is not a number.');
+  const TaOn = num('TaOn', (x) => x === 0 || x === 1, 'Ta(z) first field must be 1 (Eq. 7) or 0 (constant).');
+  const lc = TaOn === 1 ? num('lc', pos, 'Characteristic length lc must be > 0.') : 1;
+  const TaInf = num('TaInf', null, 'Ta far-field temperature is not a number.');
+  const h = num('h', (x) => x >= 0, 'Convection coefficient must be ≥ 0.');
+  const hAfter = num('hAfter', (x) => x >= 0, 'Natural convection coefficient must be ≥ 0.');
+  const factor = num('factor', pos, 'Run length must be > 0.');
+  const rhoMode = radioVal('rhoMode'), cpMode = radioVal('cpMode');
+  const rho = rhoMode === 'const' ? num('rho', pos, 'Density must be > 0.') : NaN;
+  const cp = cpMode === 'const' ? num('cp', pos, 'cp must be > 0.') : NaN;
+  if (rhoMode === 'dyn' && !tables.rho) errors.push('Dynamic density selected: load a density table.');
+  if (cpMode === 'dyn' && !tables.cp) errors.push('Dynamic cp selected: load a cp table.');
+
+  const NW = isFinite(W / w) ? Math.max(1, Math.round(W / w)) : 1;
+  const NH = isFinite(H / hl) ? Math.round(H / hl) : 0;
+  if (!bad.has('H') && !bad.has('hl') && NH < 2) { errors.push('The model needs at least 2 layers (H / layer thickness ≥ 1.5).'); bad.add('H'); }
+  let NL;
+  const dxOpt = 1 / Math.sqrt(1 / (w * w) + 1 / (hl * hl));
+  if ($('optStab').checked) {
+    NL = isFinite(L / dxOpt) ? Math.max(1, Math.round(L / dxOpt)) : 1;
+  } else {
+    NL = num('NL', (x) => x >= 1 && Math.abs(x - Math.round(x)) < 1e-9, 'Element number in x must be a whole number ≥ 1.');
+    NL = Math.round(NL);
+  }
+  for (const id of NUM_IDS) $(id).classList.toggle('bad', bad.has(id));
+  if (errors.length) return { P: null, errors, warnings, NL, NW, NH };
+
+  const N = NL * NW * NH;
+  if (N > 3e6) errors.push('Too many elements (' + fmtCount(N) + '). Reduce the size or increase the element size.');
+  const dx_mm = L / NL, dt = dx_mm / v;
+  const S = Math.max(2, Math.round(factor * N));
+  if (Math.abs(W / w - NW) > 1e-6) warnings.push('W is not a whole number of strands: using ' + NW + ' strand(s), W = ' + fmt(NW * w) + ' mm.');
+  if (Math.abs(H / hl - NH) > 1e-6) warnings.push('H is not a whole number of layers: using ' + NH + ' layers, H = ' + fmt(NH * hl) + ' mm.');
+
+  // temperature bounds for the instability check and the colour scale
+  const Ts = [Tn, Tp, Tinf, TaInf];
+  const Tmin = Math.min(...Ts), Tmax = Math.max(...Ts);
+  const margin = 0.25 * (Tmax - Tmin) + 10;
+  // 1/(rho cp) : constant or look-up table
+  let invRC = NaN, lut = null, lutT0 = 0, lutDT = 0.25, rcMin = NaN, rcMax = NaN;
+  if (rhoMode === 'const' && cpMode === 'const') {
+    invRC = 1 / (rho * 1e3 * cp * 1e3); rcMin = rcMax = rho * cp * 1e6;
+  } else {
+    const fr = rhoMode === 'dyn' ? pchip(tables.rho.T, tables.rho.v) : () => rho;
+    const fc = cpMode === 'dyn' ? pchip(tables.cp.T, tables.cp.v) : () => cp;
+    lutT0 = Tmin - margin;
+    const n = Math.ceil((Tmax + margin - lutT0) / lutDT) + 2;
+    lut = new Float64Array(n); rcMin = Infinity; rcMax = -Infinity;
+    for (let i = 0; i < n; i++) {
+      const T = lutT0 + i * lutDT, rc = fr(T) * 1e3 * fc(T) * 1e3;
+      if (!(rc > 0)) { errors.push('ρ·cp from the tables is ≤ 0 at ' + fmt(T, 1) + ' °C (extrapolation?). Extend the table range.'); break; }
+      lut[i] = 1 / rc;
+      if (T >= Tmin && T <= Tmax) { rcMin = Math.min(rcMin, rc); rcMax = Math.max(rcMax, rc); }
+    }
+  }
+  const lx = lam, ly = lam * ry, lz = lam * rz;
+  const dxm = dx_mm * 1e-3, dym = w * 1e-3, dzm = hl * 1e-3;
+  const stabNo = dt / rcMin * (lx / (dxm * dxm) + ly / (dym * dym) + lz / (dzm * dzm));
+  // keep stored frames under ~40 M values (160 MB)
+  const budget = 40e6;
+  const stride = Math.max(1, Math.ceil(S * N / budget));
+  const nFrames = Math.floor((S - 1) / stride) + 1 + ((S - 1) % stride ? 1 : 0);
+  const P = {
+    L, W, H, w, hl, v, lam, ry, rz, aniso, eps, Tn, Tp, Tinf, TaOn, lc, TaInf, h, hAfter, factor, rhoMode, cpMode, rho, cp,
+    NL, NW, NH, N, S, dx_mm, dt, dxOpt,
+    dx: dxm, dy: dym, dz: dzm, lx, ly, lz,
+    invRC, lut, lutT0, lutDT,
+    Tlo: Tmin - margin, Thi: Tmax + margin, Tmin, Tmax,
+    tEnd: N * dt, tTotal: S * dt, dTau: NL * NW * dt, stabNo, stride, nFrames,
+    bytes: nFrames * N * 4,
+    updates: (() => { const s = S - 1; return s <= N ? s * (s + 1) / 2 : N * (N + 1) / 2 + (s - N) * N; })()
+  };
+  return { P, errors, warnings, NL, NW, NH };
+}
+
+function autoFileName(P) {
+  const r = (x) => String(+(+x).toFixed(3)).replace('.', 'p');
+  return 'Tn' + r(P.Tn) + '_Tp' + r(P.Tp) + '_v' + r(P.v) + '_h' + r(P.h) + '_' + r(P.L) + 'x' + r(P.W) + 'x' + r(P.H) + '_NL' + P.NL;
+}
+
+/* =====================================================================
+   APP STATE
+   ===================================================================== */
+const app = {
+  cur: null,            // { P, warnings } from the current inputs
+  result: null,         // finished (or partial) run
+  running: false,
+  worker: null, workerURL: null, useWorker: true,
+  cancelFlag: false, hardTimer: null,
+  live: null,           // { T: Float32Array, cnt, m }
+  lastBeat: 0, runStart: 0, lastProgress: null,
+  rate: 3e7,            // element updates per second, refined after each run
+  frame: 0, playing: false, simTime: 0,
+  probes: [],           // { i, j, k, slot } - element indices, independent of any run
+  stale: false,
+  geoCache: null
+};
+function geometryFor(NL, NW, NH) {
+  const g = app.geoCache;
+  if (g && g.NL === NL && g.NW === NW && g.NH === NH) return g;
+  app.geoCache = t4f3Geometry(NL, NW, NH);
+  return app.geoCache;
+}
+
+/* =====================================================================
+   DERIVED VALUES + INPUT HANDLING
+   ===================================================================== */
+function onInputsChanged(showValidation) {
+  // UI toggles
+  const rhoDyn = radioVal('rhoMode') === 'dyn', cpDyn = radioVal('cpMode') === 'dyn';
+  $('rhoConstBox').style.display = rhoDyn ? 'none' : ''; $('rhoDynBox').style.display = rhoDyn ? '' : 'none';
+  $('cpConstBox').style.display = cpDyn ? 'none' : ''; $('cpDynBox').style.display = cpDyn ? '' : 'none';
+  const aniso = radioVal('aniso') === 'yes';
+  $('ry').disabled = !aniso; $('rz').disabled = !aniso;
+  $('lc').disabled = $('TaOn').value === '0';
+  $('NL').disabled = $('optStab').checked;
+  $('fname').disabled = $('autoName').checked;
+
+  const r = readParams();
+  if ($('optStab').checked && r.NL) $('NL').value = r.NL;
+  app.cur = r;
+  if (r.P && $('autoName').checked) $('fname').value = autoFileName(r.P);
+  renderDerived(r);
+  if (app.result) {
+    const P0 = app.result.P;
+    const same = r.P && ['L', 'W', 'H', 'w', 'hl', 'v', 'lam', 'ry', 'rz', 'eps', 'Tn', 'Tp', 'Tinf', 'TaOn', 'lc', 'TaInf', 'h', 'hAfter', 'factor', 'rhoMode', 'cpMode', 'rho', 'cp', 'NL']
+      .every(k => normVal(P0[k]) === normVal(r.P[k]));
+    app.stale = !same;
+    $('staleBanner').classList.toggle('on', app.stale);
+  }
+  if (!app.result && !app.running) { updateHeatRange(r.P); renderView(); renderLegends(); }
+  $('btnRun').disabled = !r.P || app.running;
+  if (!app.running && showValidation !== false) {
+    if (r.errors.length) setMsg(r.errors.join('\n'), 'err');
+    else if (r.warnings.length) setMsg(r.warnings.join('\n'), 'warn');
+    else setMsg('');
+  }
+}
+function normVal(v) { return (v === null || v === undefined || (typeof v === 'number' && isNaN(v))) ? 'NaN' : v; }
+function renderDerived(r) {
+  const box = $('derived'); box.textContent = '';
+  const add = (k, v) => { const d = document.createElement('div'); const a = document.createElement('span'); a.className = 'k'; a.textContent = k; const b = document.createElement('span'); b.className = 'v'; b.textContent = v; d.append(a, b); box.append(d); };
+  const P = r.P;
+  if (!P) { add('Elements', r.NL && r.NW && r.NH ? r.NL + ' × ' + r.NW + ' × ' + r.NH : '-'); add('Status', 'check the inputs'); return; }
+  add('Elements NL × NW × NH', P.NL + ' × ' + P.NW + ' × ' + P.NH + ' = ' + P.N.toLocaleString());
+  add('Δx (element length)', fmt(P.dx_mm, 4) + ' mm');
+  add('Δt = Δx / v', fmt(P.dt, 4) + ' s');
+  add('Inter-layer time Δτ', fmt(P.dTau, 3) + ' s');
+  add('Print time t_end', fmtTime(P.tEnd));
+  add('Simulated time', fmtTime(P.tTotal) + ' (' + P.S.toLocaleString() + ' steps)');
+  add('Stability number (≤ 0.5)', fmt(P.stabNo, 3) + (P.stabNo <= 0.5 ? '  ok' : '  unstable'));
+}
+function updateHeatRange(P) {
+  if (P) heatRange = [Math.floor(P.Tmin), Math.ceil(P.Tmax)];
+  if (!(heatRange[1] > heatRange[0])) heatRange = [heatRange[0], heatRange[0] + 1];
+  drawHeatbar();
+}
+
+/* =====================================================================
+   RUN CONTROL (Web Worker with main-thread fallback)
+   ===================================================================== */
+function makeWorker() {
+  if (!app.useWorker || typeof Worker === 'undefined') return null;
+  try {
+    if (!app.workerURL) {
+      const src = '"use strict";\n' + t4f3Geometry.toString() + '\n' + t4f3Solve.toString() + '\n(' + t4f3WorkerMain.toString() + ')();\n';
+      app.workerURL = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    }
+    return new Worker(app.workerURL);
+  } catch (e) {
+    app.useWorker = false;
+    return null;
+  }
+}
+function startRun() {
+  const r = readParams();
+  if (!r.P) { setMsg(r.errors.join('\n'), 'err'); return; }
+  const P = r.P;
+  if (P.stabNo > 0.5) {
+    if (!confirm('Stability number is ' + fmt(P.stabNo, 3) + ' (> 0.5). The explicit scheme will probably blow up. Run anyway?')) return;
+  }
+  app.running = true; app.cancelFlag = false; app.live = null; app.lastProgress = null;
+  stopPlay();
+  // probes recorded at every step: the ones chosen so far that fit this geometry, or a default one
+  const geoRun = geometryFor(P.NL, P.NW, P.NH);
+  app.probes = app.probes.filter(p => geoRun.at(p.i, p.j, p.k) >= 0);
+  if (!app.probes.length) addDefaultProbe(P);
+  P.probeE = app.probes.map(p => geoRun.at(p.i, p.j, p.k));
+  P.probeStride = Math.max(1, Math.ceil(P.S * P.probeE.length / 8e6));
+  app.runP = P;
+  $('staleBanner').classList.remove('on');
+  document.querySelector('.plots').style.opacity = '0.45';
+  updateHeatRange(P);
+  $('inputsFs').disabled = true;
+  ['btnRun', 'btnEstimate', 'btnStab', 'btnLoad', 'btnSave', 'btnCsvProbe', 'btnCsvFrame', 'btnPlay'].forEach(id => $(id).disabled = true);
+  $('slider').disabled = true;
+  $('btnCancel').disabled = false; $('btnCancel').textContent = 'Cancel';
+  $('progress').classList.add('on');
+  $('pfill').style.width = '0%'; $('ppct').textContent = '0%';
+  $('pphase').textContent = 'Starting…'; $('psteps').textContent = ''; $('ptime').textContent = '';
+  setMsg('Running: ' + P.N.toLocaleString() + ' elements, ' + P.S.toLocaleString() + ' steps, ' + fmtCount(P.updates) + ' element updates (estimated ' + fmtTime(P.updates / app.rate) + ').');
+  $('viewSub').textContent = '- live view while computing';
+  app.runStart = performance.now(); app.lastBeat = performance.now();
+  app.beatTimer = setInterval(heartbeat, 250);
+
+  const msgP = Object.assign({}, P);
+  app.worker = makeWorker();
+  if (app.worker) {
+    const w = app.worker;
+    w.onmessage = (ev) => { if (w !== app.worker) return; handleSolverMessage(ev.data); };
+    w.onerror = (ev) => {
+      if (w !== app.worker) return;
+      ev.preventDefault && ev.preventDefault();
+      // worker could not start (e.g. blocked blob URL): fall back to the main thread once
+      if (!app.lastProgress) { w.terminate(); app.worker = null; app.useWorker = false; runOnMainThread(msgP); }
+      else finishRun({ type: 'error', message: 'Worker error: ' + (ev.message || 'unknown') });
+    };
+    w.postMessage({ cmd: 'run', P: msgP });
+  } else {
+    runOnMainThread(msgP);
+  }
+}
+async function runOnMainThread(P) {
+  app.mainThread = true;
+  try {
+    const out = await t4f3Solve(P, {
+      progress: (p) => handleSolverMessage(Object.assign({ type: 'progress' }, p)),
+      yield: () => new Promise(r => setTimeout(r, 0)),
+      cancelled: () => app.cancelFlag
+    });
+    handleSolverMessage(Object.assign({ type: 'done' }, out));
+  } catch (e) {
+    handleSolverMessage({ type: 'error', message: String(e && e.message || e) });
+  }
+  app.mainThread = false;
+}
+function handleSolverMessage(d) {
+  if (!app.running) return;
+  if (d.type === 'progress') {
+    app.lastBeat = performance.now();
+    app.lastProgress = d;
+    if (d.live) app.live = { T: d.live, cnt: d.cnt, m: d.m };
+    updateProgress(d);
+    if (d.live) renderView();
+  } else if (d.type === 'done' || d.type === 'error') {
+    finishRun(d);
+  }
+}
+function updateProgress(d) {
+  const P = app.runP;
+  const f = d.totalWork > 0 ? d.work / d.totalWork : d.m / d.S;
+  $('pfill').style.width = (100 * f).toFixed(1) + '%';
+  $('ppct').textContent = (100 * f).toFixed(f < 0.1 ? 1 : 0) + '%';
+  const t = d.m * P.dt;
+  if (d.m < P.N) {
+    const k = Math.floor((d.cnt - 1) / (P.NL * P.NW)) + 1;
+    $('pphase').textContent = 'Printing: layer ' + k + ' / ' + P.NH + ', element ' + d.cnt.toLocaleString() + ' / ' + P.N.toLocaleString() + ', t = ' + fmtTime(t);
+  } else {
+    $('pphase').textContent = 'Cooling after print: t = ' + fmtTime(t) + ' of ' + fmtTime(P.tTotal);
+  }
+  $('psteps').textContent = 'step ' + d.m.toLocaleString() + ' / ' + d.S.toLocaleString();
+  const rate = d.elapsed > 0 ? d.work / d.elapsed : 0;
+  const eta = f > 0.002 && d.elapsed > 0.3 ? d.elapsed * (1 - f) / f : NaN;
+  $('ptime').textContent = 'elapsed ' + fmtTime(d.elapsed) + (isFinite(eta) ? ' · about ' + fmtTime(eta) + ' left' : '') + (rate ? ' · ' + fmtCount(rate) + ' element updates/s' : '') + (app.mainThread ? ' · main thread' : '');
+}
+function heartbeat() {
+  if (!app.running) return;
+  const age = (performance.now() - app.lastBeat) / 1000;
+  const el = $('pbeat');
+  if (age > 3) { el.textContent = 'no update for ' + age.toFixed(0) + ' s - the solver may be stuck; Cancel will force-stop it'; el.classList.add('stale'); }
+  else { el.textContent = 'last update ' + age.toFixed(1) + ' s ago'; el.classList.remove('stale'); }
+}
+function cancelRun() {
+  if (!app.running) return;
+  app.cancelFlag = true;
+  $('btnCancel').disabled = true; $('btnCancel').textContent = 'Stopping…';
+  if (app.worker) {
+    app.worker.postMessage({ cmd: 'cancel' });
+    const stale = (performance.now() - app.lastBeat) > 3000;
+    app.hardTimer = setTimeout(() => {
+      if (!app.running) return;
+      app.worker.terminate(); app.worker = null;
+      finishRun({ type: 'error', message: 'Force-stopped: the solver did not respond to Cancel. Partial results were discarded.' });
+    }, stale ? 50 : 1500);
+  }
+}
+function finishRun(d) {
+  clearInterval(app.beatTimer); clearTimeout(app.hardTimer);
+  app.running = false;
+  if (app.worker) { app.worker.terminate(); app.worker = null; }
+  $('inputsFs').disabled = false;
+  document.querySelector('.plots').style.opacity = '';
+  ['btnEstimate', 'btnStab', 'btnLoad'].forEach(id => $(id).disabled = false);
+  $('progress').classList.remove('on');
+  const P = app.runP;
+  if (d.type === 'error') {
+    setMsg('Run failed: ' + d.message, 'err');
+    app.live = null;
+    $('viewSub').textContent = app.result ? '- previous run' : '- preview of the element grid and print path';
+  } else {
+    const frames = d.frames.subarray(0, d.nf * d.N);
+    const frameM = d.frameM.subarray(0, d.nf);
+    const frameT = new Float64Array(d.nf);
+    for (let f = 0; f < d.nf; f++) frameT[f] = frameM[f] * P.dt;
+    if (d.elapsed > 1 && d.doneWork > 1e7) app.rate = d.doneWork / d.elapsed;
+    const probeRec = { E: Array.from(d.probeE), data: d.pData, M: d.pM, n: d.npf, stride: P.probeStride };
+    app.resultUi = uiValues(); app.resultTables = { rho: tables.rho, cp: tables.cp };
+    setResult({ P, frames, frameM, frameT, nf: d.nf, status: d.status, lastM: d.lastM, elapsed: d.elapsed, probeRec });
+    const rateTxt = d.elapsed > 0 ? ' (' + fmtCount(d.doneWork / d.elapsed) + ' element updates/s)' : '';
+    if (d.status === 'done') setMsg('Done: ' + P.S.toLocaleString() + ' steps in ' + fmtTime(d.elapsed) + rateTxt + '. ' + d.nf.toLocaleString() + ' frames stored' + (P.stride > 1 ? ' (every ' + P.stride + ' steps)' : '') + '.');
+    else if (d.status === 'cancelled') setMsg('Cancelled at t = ' + fmtTime(d.lastM * P.dt) + ' of ' + fmtTime(P.tTotal) + '. Results up to that time are kept.', 'warn');
+    else setMsg(d.message + '\nResults up to that step are kept. Check the stability number or reduce the time step (more elements in x, or the inter-layer time similarity rule).', 'err');
+  }
+  onInputsChanged(false);
+}
+
+/* =====================================================================
+   RESULTS
+   ===================================================================== */
+function setResult(res) {
+  app.result = res;
+  app.live = null;
+  app.stale = false; $('staleBanner').classList.remove('on');
+  const P = res.P;
+  updateHeatRange(P);
+  const geo = geometryFor(P.NL, P.NW, P.NH);
+  if (!app.probes.some(p => geo.at(p.i, p.j, p.k) >= 0)) addDefaultProbe(P);
+  res.p2range = null;
+  app.p1zoom = null;
+  $('slider').max = String(res.nf - 1);
+  $('slider').disabled = false;
+  $('btnPlay').disabled = false;
+  ['btnSave', 'btnCsvProbe', 'btnCsvFrame'].forEach(id => $(id).disabled = false);
+  $('viewSub').textContent = res.status === 'done' ? '- drag the slider or press Play' : '- partial run (' + res.status + ')';
+  // show the frame where the default probe was just deposited plus one inter-layer time
+  const p0 = app.probes.find(p => geo.at(p.i, p.j, p.k) >= 0);
+  const born = (geo.at(p0.i, p0.j, p0.k) + 1) * P.dt;
+  setFrame(frameAtTime(Math.min(res.frameT[res.nf - 1], born + P.dTau * 0.5)));
+  invalidatePlots();
+  renderAll();
+}
+function frameAtTime(t) {
+  const ft = app.result.frameT; let lo = 0, hi = ft.length - 1;
+  if (t <= ft[0]) return 0; if (t >= ft[hi]) return hi;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (ft[mid] <= t) lo = mid; else hi = mid; }
+  return (t - ft[lo] < ft[hi] - t) ? lo : hi;
+}
+function setFrame(f) {
+  const res = app.result; if (!res) return;
+  app.frame = clamp(f | 0, 0, res.nf - 1);
+  app.simTime = res.frameT[app.frame];
+  $('slider').value = String(app.frame);
+  renderAll();
+}
+// default probe: mid-length, front strand (y = 0), mid-height - the paper's r = (9, 0, 6) for Set 1
+function addDefaultProbe(P) { addProbe(Math.max(1, Math.round(P.NL / 2)), 1, Math.max(1, Math.round(P.NH / 2))); }
+function addProbe(i, j, k) {
+  if (app.probes.some(p => p.i === i && p.j === j && p.k === k)) return false;
+  if (app.probes.length >= 5) { setMsg('Up to 5 probes. Remove one first (× in the legend).', 'warn'); return false; }
+  let slot = 0; while (app.probes.some(p => p.slot === slot)) slot++;
+  app.probes.push({ i, j, k, slot });
+  app.probes.sort((a, b) => a.slot - b.slot);
+  if (app.result) app.result.p2range = null;
+  return true;
+}
+function removeProbe(slot) {
+  app.probes = app.probes.filter(p => p.slot !== slot);
+  if (app.result) app.result.p2range = null;
+  invalidatePlots(); renderAll();
+}
+function toggleProbeAt(i, j, k) {
+  const ex = app.probes.find(p => p.i === i && p.j === j && p.k === k);
+  if (ex) { removeProbe(ex.slot); return; }
+  if (addProbe(i, j, k)) { invalidatePlots(); renderAll(); }
+}
+function renderAll() { renderView(); renderPlot1(); renderPlot2(); renderLegends(); updateTimeReadout(); }
+function updateTimeReadout() {
+  const res = app.result;
+  if (!res) { $('tread').textContent = 't = -'; return; }
+  const P = res.P, m = res.frameM[app.frame];
+  const t = m * P.dt;
+  $('tread').textContent = 't = ' + t.toFixed(2) + ' s' + (m <= P.N ? '  (printing)' : '  (cooling, +' + (t - P.tEnd).toFixed(1) + ' s)');
+}
+
+/* =====================================================================
+   PRINT VIEW (oblique projection of the voxel grid + nozzle)
+   ===================================================================== */
+let viewPolys = [];
+let viewProj = null;
+function currentViewState() {
+  // returns { P, geo, cnt, m, getT(e) | null, mode }
+  if (app.running && app.runP) {
+    const P = app.runP, geo = geometryFor(P.NL, P.NW, P.NH);
+    const lv = app.live;
+    if (!lv) return { P, geo, cnt: 1, m: 1, getT: () => P.Tn, mode: 'live' };
+    return { P, geo, cnt: lv.cnt, m: lv.m, getT: (e) => lv.T[e], mode: 'live' };
+  }
+  if (app.result) {
+    const res = app.result, P = res.P, geo = geometryFor(P.NL, P.NW, P.NH);
+    const m = res.frameM[app.frame], cnt = Math.min(m, P.N), off = app.frame * P.N;
+    return { P, geo, cnt, m, getT: (e) => res.frames[off + e], mode: 'result' };
+  }
+  const r = app.cur;
+  if (!r || !r.P) return null;
+  const P = r.P, geo = geometryFor(P.NL, P.NW, P.NH);
+  return { P, geo, cnt: 0, m: 0, getT: null, mode: 'preview' };
+}
+function renderView() {
+  const cv = $('view');
+  const { ctx, w: Wc, h: Hc } = setupCanvas(cv);
+  ctx.clearRect(0, 0, Wc, Hc);
+  ctx.fillStyle = theme.surface; ctx.fillRect(0, 0, Wc, Hc);
+  viewPolys = [];
+  const st = currentViewState();
+  if (!st) { ctx.fillStyle = theme.ink2; ctx.font = '13px system-ui'; ctx.fillText('Fix the inputs to see the part.', 16, 24); return; }
+  const { P, geo, cnt } = st;
+  const NL = P.NL, NW = P.NW, NH = P.NH;
+  const Lx = NL * P.dx_mm, Wy = NW * P.w, Hz = NH * P.hl;
+  // oblique projection: depth axis at 30°, foreshortened; exaggerate thin dimensions for readability
+  const th = Math.PI / 6, dk = 0.6, dcos = Math.cos(th) * dk, dsin = Math.sin(th) * dk;
+  let zx = 1, yx = 1;
+  if (Hz < 0.22 * Lx) zx = 0.22 * Lx / Hz;
+  if (Wy * dk < 0.12 * Math.max(Lx, Hz * zx)) yx = 0.12 * Math.max(Lx, Hz * zx) / (Wy * dk);
+  const top = 92, bottom = 34, mx = 28;
+  const s = Math.min((Wc - 2 * mx) / (Lx + Wy * yx * dcos), (Hc - top - bottom) / (Hz * zx + Wy * yx * dsin));
+  const ox = (Wc - s * (Lx + Wy * yx * dcos)) / 2, oy = Hc - bottom;
+  const X = (x, y) => ox + s * (x + y * yx * dcos);
+  const Y = (y, z) => oy - s * (z * zx + y * yx * dsin);
+  viewProj = { X, Y, s, zx, yx };
+  const dxm = P.dx_mm, wm = P.w, hm = P.hl;
+
+  // plate (coloured at Tp)
+  const pad = 0.04 * Lx;
+  const bedT = 7;
+  const bedFill = heatRgb[heatIndex(P.Tp)];
+  ctx.beginPath();
+  ctx.moveTo(X(-pad, 0), Y(0, 0)); ctx.lineTo(X(Lx + pad, 0), Y(0, 0));
+  ctx.lineTo(X(Lx + pad, Wy + 0.15 * Wy), Y(Wy + 0.15 * Wy, 0)); ctx.lineTo(X(-pad, Wy + 0.15 * Wy), Y(Wy + 0.15 * Wy, 0)); ctx.closePath();
+  ctx.fillStyle = shade(bedFill, theme.flip ? -0.25 : 0.25); ctx.fill();
+  ctx.fillStyle = 'rgb(' + bedFill.join(',') + ')';
+  ctx.fillRect(X(-pad, 0), Y(0, 0), X(Lx + pad, 0) - X(-pad, 0), bedT);
+  ctx.strokeStyle = theme.plannedEdge; ctx.lineWidth = 1; ctx.strokeRect(X(-pad, 0) + 0.5, Y(0, 0) + 0.5, X(Lx + pad, 0) - X(-pad, 0) - 1, bedT - 1);
+  ctx.fillStyle = theme.ink2; ctx.font = '12px system-ui';
+  ctx.fillText('plate ' + fmt(P.Tp, 1) + ' °C', Math.max(10, X(-pad, 0)), Y(0, 0) + bedT + 14);
+
+  // bounding box (final part) as a hairline wireframe
+  const box = (x0, y0, z0, x1, y1, z1) => {
+    const pts = [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+    ctx.beginPath();
+    ctx.moveTo(X(x0, y0), Y(y0, z0)); ctx.lineTo(X(x0, y0), Y(y0, z1)); ctx.lineTo(X(x1, y0), Y(y0, z1)); ctx.lineTo(X(x1, y0), Y(y0, z0)); ctx.closePath();
+    ctx.moveTo(X(x0, y0), Y(y0, z1)); ctx.lineTo(X(x0, y1), Y(y1, z1)); ctx.lineTo(X(x1, y1), Y(y1, z1)); ctx.lineTo(X(x1, y0), Y(y0, z1));
+    ctx.moveTo(X(x1, y1), Y(y1, z1)); ctx.lineTo(X(x1, y1), Y(y1, z0)); ctx.lineTo(X(x1, y0), Y(y0, z0));
+    return pts;
+  };
+  ctx.strokeStyle = theme.axis; ctx.lineWidth = 1; box(0, 0, 0, Lx, Wy, Hz); ctx.stroke();
+
+  const exists = st.mode === 'preview' ? () => true : (e) => e >= 0 && e < cnt;
+  const pxW = s * dxm, pxH = s * hm * zx;
+  const edges = pxW >= 5 && pxH >= 4;
+  const at = geo.at;
+  for (let j = NW; j >= 1; j--) {
+    const y0 = (j - 1) * wm, y1 = j * wm;
+    for (let k = 1; k <= NH; k++) {
+      const z0 = (k - 1) * hm, z1 = k * hm;
+      for (let i = 1; i <= NL; i++) {
+        const e = at(i, j, k);
+        if (!exists(e)) continue;
+        const x0 = (i - 1) * dxm, x1 = i * dxm;
+        let base, cFront, cTop, cRight;
+        if (st.mode === 'preview') { cFront = cTop = cRight = theme.planned; }
+        else {
+          const T = st.getT(e);
+          base = heatRgb[heatIndex(isFinite(T) ? T : P.Tn)];
+          cFront = 'rgb(' + base.join(',') + ')'; cTop = shade(base, 0.14); cRight = shade(base, -0.14);
+        }
+        const showFront = j === 1 || !exists(at(i, j - 1, k));
+        const showTop = k === NH || !exists(at(i, j, k + 1));
+        const showRight = i === NL || !exists(at(i + 1, j, k));
+        if (showRight) {
+          const poly = [X(x1, y0), Y(y0, z0), X(x1, y1), Y(y1, z0), X(x1, y1), Y(y1, z1), X(x1, y0), Y(y0, z1)];
+          fillPoly(ctx, poly, cRight, edges); viewPolys.push({ e, poly });
+        }
+        if (showTop) {
+          const poly = [X(x0, y0), Y(y0, z1), X(x1, y0), Y(y0, z1), X(x1, y1), Y(y1, z1), X(x0, y1), Y(y1, z1)];
+          fillPoly(ctx, poly, cTop, edges); viewPolys.push({ e, poly });
+        }
+        if (showFront) {
+          const poly = [X(x0, y0), Y(y0, z0), X(x1, y0), Y(y0, z0), X(x1, y0), Y(y0, z1), X(x0, y0), Y(y0, z1)];
+          fillPoly(ctx, poly, cFront, edges); viewPolys.push({ e, poly });
+        }
+      }
+    }
+  }
+
+  // print path ahead in the current layer + nozzle
+  const centre = (e) => { const i = geo.oi[e], j = geo.oj[e], k = geo.ok[e]; return [(i - 0.5) * dxm, (j - 0.5) * wm, k * hm]; };
+  let nozE = -1, finished = false;
+  if (st.mode === 'preview') nozE = 0;
+  else if (st.m <= P.N) nozE = cnt - 1; else finished = true;
+  if (nozE >= 0 && st.mode !== 'preview') {
+    const perLayer = NL * NW;
+    const layerEnd = (Math.floor(nozE / perLayer) + 1) * perLayer;
+    ctx.save();
+    ctx.strokeStyle = theme.ink2; ctx.globalAlpha = 0.55; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let e = nozE; e < Math.min(layerEnd, P.N); e++) {
+      const c = centre(e);
+      if (e === nozE) ctx.moveTo(X(c[0], c[1]), Y(c[1], c[2])); else ctx.lineTo(X(c[0], c[1]), Y(c[1], c[2]));
+    }
+    ctx.stroke();
+    ctx.restore();
+    const c = centre(nozE);
+    const dir = (geo.oj[nozE] % 2 === 1) ? 1 : -1;
+    drawNozzle(ctx, X(c[0], c[1]), Y(c[1], c[2]), clamp(s * P.w * 0.9, 9, 24), dir, 1);
+  } else if (nozE >= 0) { // preview: nozzle parked above the start of the path
+    drawNozzle(ctx, X(0.5 * dxm, 0.5 * wm), Y(0.5 * wm, Hz) - 6, clamp(s * P.w * 0.9, 9, 24), 1, 0.9);
+  } else if (finished) {
+    drawNozzle(ctx, X(Lx, Wy * 0.5) - 10, Y(Wy * 0.5, Hz) - 26, 12, 0, 0.35);
+    ctx.fillStyle = theme.ink2; ctx.font = '12px system-ui'; ctx.textAlign = 'right';
+    ctx.fillText('print finished, cooling', Wc - 12, 18); ctx.textAlign = 'left';
+  }
+
+  // probes
+  {
+    for (const p of app.probes) {
+      const pe = geo.at(p.i, p.j, p.k);
+      if (pe < 0) continue;
+      const c = centre(pe);
+      const px = X(c[0], c[1]), py = Y(c[1], c[2] - hm * 0.5);
+      ctx.beginPath(); ctx.arc(px, py, 5.5, 0, 2 * Math.PI); ctx.fillStyle = theme.surface; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 4, 0, 2 * Math.PI); ctx.fillStyle = theme.series[p.slot]; ctx.fill();
+      ctx.fillStyle = theme.ink; ctx.font = '600 11px system-ui';
+      ctx.fillText('P' + (p.slot + 1), px + 7, py - 6);
+    }
+  }
+
+  // header text
+  ctx.fillStyle = theme.ink2; ctx.font = '12px system-ui';
+  const lines = [];
+  if (st.mode === 'preview') {
+    lines.push('Preview: ' + NL + ' × ' + NW + ' × ' + NH + ' elements. The print starts at the left end of the front strand (arrow).');
+  } else {
+    const t = st.m * P.dt;
+    lines.push('t = ' + t.toFixed(2) + ' s');
+    if (!finished) {
+      const e = cnt - 1;
+      lines.push('layer ' + geo.ok[e] + ' / ' + NH + ', strand ' + geo.oj[e] + ' / ' + NW + ', element ' + cnt.toLocaleString() + ' / ' + P.N.toLocaleString());
+    } else lines.push('all ' + P.N.toLocaleString() + ' elements printed');
+  }
+  lines.forEach((l, n) => ctx.fillText(l, 12, 18 + n * 16));
+  if (zx > 1.01 || yx > 1.01) {
+    ctx.textAlign = 'right'; ctx.fillStyle = theme.muted;
+    ctx.fillText('not to scale: ' + (zx > 1.01 ? 'z ×' + fmt(zx, 1) + ' ' : '') + (yx > 1.01 ? 'y ×' + fmt(yx, 1) : ''), Wc - 12, Hc - 10);
+    ctx.textAlign = 'left';
+  }
+}
+function fillPoly(ctx, p, fill, edges) {
+  ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  if (edges) { ctx.strokeStyle = theme.plannedEdge; ctx.lineWidth = 0.6; ctx.stroke(); }
+  else { ctx.strokeStyle = fill; ctx.lineWidth = 0.5; ctx.stroke(); } // hide seams between tiny faces
+}
+function drawNozzle(ctx, cx, tipY, tipW, dir, alpha) {
+  const bodyW = tipW * 3.2, cham = (bodyW - tipW) / 2, bodyH = tipW * 2.4;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.moveTo(cx - tipW / 2, tipY); ctx.lineTo(cx + tipW / 2, tipY);
+  ctx.lineTo(cx + bodyW / 2, tipY - cham); ctx.lineTo(cx + bodyW / 2, tipY - cham - bodyH);
+  ctx.lineTo(cx - bodyW / 2, tipY - cham - bodyH); ctx.lineTo(cx - bodyW / 2, tipY - cham); ctx.closePath();
+  ctx.fillStyle = theme.nozzle; ctx.fill();
+  ctx.strokeStyle = theme.nozzleEdge; ctx.lineWidth = 1.5; ctx.stroke();
+  if (dir) { // travel direction arrow
+    const ay = tipY - cham - bodyH * 0.5, x0 = cx + dir * (bodyW / 2 + 6), x1 = x0 + dir * 22;
+    ctx.strokeStyle = theme.ink2; ctx.fillStyle = theme.ink2; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x0, ay); ctx.lineTo(x1, ay); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1 + dir * 6, ay); ctx.lineTo(x1, ay - 4); ctx.lineTo(x1, ay + 4); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function hitView(px, py) {
+  for (let n = viewPolys.length - 1; n >= 0; n--) {
+    const p = viewPolys[n].poly;
+    let sign = 0, inside = true;
+    for (let a = 0; a < 4; a++) {
+      const x1 = p[2 * a], y1 = p[2 * a + 1], x2 = p[(2 * a + 2) % 8], y2 = p[(2 * a + 3) % 8];
+      const c = (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1);
+      if (c !== 0) { const sg = c > 0 ? 1 : -1; if (sign === 0) sign = sg; else if (sg !== sign) { inside = false; break; } }
+    }
+    if (inside) return viewPolys[n].e;
+  }
+  return -1;
+}
+function tipRows(tip, rows) {
+  tip.textContent = '';
+  for (const r of rows) {
+    const d = document.createElement('div'); d.className = 'trow';
+    if (r.color) { const l = document.createElement('span'); l.className = 'tline'; l.style.background = r.color; d.append(l); }
+    if (r.val !== undefined) { const v = document.createElement('span'); v.className = 'val'; v.textContent = r.val; d.append(v); }
+    if (r.sec !== undefined) { const s = document.createElement('span'); s.className = 'sec'; s.textContent = r.sec; d.append(s); }
+    tip.append(d);
+  }
+}
+function placeTip(tip, wrap, x, y) {
+  tip.style.display = 'block';
+  const W = wrap.clientWidth, tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = x + 14; if (left + tw > W) left = x - tw - 14;
+  let top = y + 14; if (top + th > wrap.clientHeight) top = Math.max(0, y - th - 10);
+  tip.style.left = Math.max(0, left) + 'px'; tip.style.top = top + 'px';
+}
+function viewElementInfo(e) {
+  const st = currentViewState(); if (!st) return null;
+  const { P, geo } = st;
+  const i = geo.oi[e], j = geo.oj[e], k = geo.ok[e];
+  const rows = [];
+  if (st.mode !== 'preview') rows.push({ val: fmt(st.getT(e), 1) + ' °C', sec: 'temperature' });
+  rows.push({ sec: 'element (i, j, k) = (' + i + ', ' + j + ', ' + k + ')' });
+  rows.push({ sec: 'x, y, z = ' + fmt(i * P.dx_mm, 2) + ', ' + fmt(j * P.w, 2) + ', ' + fmt(k * P.hl, 2) + ' mm' });
+  rows.push({ sec: 'deposited at t0 = ' + fmt((e + 1) * P.dt, 3) + ' s (#' + (e + 1).toLocaleString() + ')' });
+  if (st.mode !== 'live') rows.push({ sec: app.probes.some(p => p.i === i && p.j === j && p.k === k) ? 'click to remove probe' : 'click to add as probe' + (st.mode === 'preview' ? ' (recorded every step)' : '') });
+  return rows;
+}
+
+/* =====================================================================
+   PLOTS
+   ===================================================================== */
+const plotCache = { p1: null };
+function invalidatePlots() { plotCache.p1 = null; }
+function plotFrame(w, h) { return { l: 48, r: 12, t: 10, b: 36, W: w, H: h }; }
+function drawAxes(ctx, F, xr, yr, xlabel, ylabel) {
+  const pw = F.W - F.l - F.r, ph = F.H - F.t - F.b;
+  const sx = (x) => F.l + (x - xr[0]) / (xr[1] - xr[0]) * pw;
+  const sy = (y) => F.t + ph - (y - yr[0]) / (yr[1] - yr[0]) * ph;
+  ctx.font = '11.5px system-ui'; ctx.fillStyle = theme.muted; ctx.strokeStyle = theme.grid; ctx.lineWidth = 1;
+  const yt = niceTicks(yr[0], yr[1], Math.max(3, Math.floor(ph / 40)));
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  for (const v of yt.ticks) { const y = Math.round(sy(v)) + 0.5; ctx.beginPath(); ctx.moveTo(F.l, y); ctx.lineTo(F.l + pw, y); ctx.stroke(); ctx.fillText(fmt(v, 3), F.l - 6, y); }
+  const xt = niceTicks(xr[0], xr[1], Math.max(3, Math.floor(pw / 80)));
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (const v of xt.ticks) { const x = Math.round(sx(v)) + 0.5; ctx.beginPath(); ctx.moveTo(x, F.t + ph); ctx.lineTo(x, F.t + ph + 4); ctx.strokeStyle = theme.axis; ctx.stroke(); ctx.fillText(fmt(v, 3), x, F.t + ph + 6); }
+  ctx.strokeStyle = theme.axis; ctx.beginPath(); ctx.moveTo(F.l, F.t + ph + 0.5); ctx.lineTo(F.l + pw, F.t + ph + 0.5); ctx.stroke();
+  ctx.fillStyle = theme.ink2; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(xlabel, F.l + pw / 2, F.H - 4);
+  ctx.save(); ctx.translate(12, F.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.fillText(ylabel, 0, 0); ctx.restore();
+  ctx.textAlign = 'left';
+  return { sx, sy, pw, ph };
+}
+function emptyPlot(ctx, w, h, text) {
+  ctx.fillStyle = theme.surface; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = theme.muted; ctx.font = '13px system-ui'; ctx.textAlign = 'center'; ctx.fillText(text, w / 2, h / 2); ctx.textAlign = 'left';
+}
+// returns { xs (time), ys (T), full } for a probe in the current result, or null if outside its geometry
+function probeSeries(p) {
+  const res = app.result, P = res.P, N = P.N;
+  const e = geometryFor(P.NL, P.NW, P.NH).at(p.i, p.j, p.k);
+  if (e < 0) return null;
+  const pr = res.probeRec, q = pr ? pr.E.indexOf(e) : -1;
+  if (q >= 0 && pr.n > 0) {
+    const xs = new Float64Array(pr.n); for (let f = 0; f < pr.n; f++) xs[f] = pr.M[f] * P.dt;
+    return { xs, ys: pr.data.subarray(q * pr.n, (q + 1) * pr.n), full: pr.stride === 1, stride: pr.stride };
+  }
+  const ys = new Float32Array(res.nf);
+  for (let f = 0; f < res.nf; f++) ys[f] = res.frames[f * N + e];
+  return { xs: res.frameT, ys, full: P.stride === 1, stride: P.stride };
+}
+function nearestIndex(xs, t) {
+  let lo = 0, hi = xs.length - 1;
+  if (t <= xs[0]) return 0; if (t >= xs[hi]) return hi;
+  while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (xs[mid] <= t) lo = mid; else hi = mid; }
+  return (t - xs[lo] < xs[hi] - t) ? lo : hi;
+}
+function renderPlot1() {
+  const cv = $('plot1'); const { ctx, w, h } = setupCanvas(cv);
+  const res = app.result;
+  if (!res || !app.probes.length) { emptyPlot(ctx, w, h, res ? 'Click an element in the print view to add a probe.' : 'Run the simulation to see temperature curves.'); return; }
+  const key = w + 'x' + h + '|' + app.probes.map(p => p.i + ',' + p.j + ',' + p.k + ':' + p.slot).join(';') + '|' + theme.flip + '|' + res.nf + '|' + (app.p1zoom ? app.p1zoom.join(',') : 'full');
+  if (!plotCache.p1 || plotCache.p1.key !== key) {
+    const off = document.createElement('canvas'); const dpr = window.devicePixelRatio || 1;
+    off.width = Math.round(w * dpr); off.height = Math.round(h * dpr);
+    const o = off.getContext('2d'); o.setTransform(dpr, 0, 0, dpr, 0, 0);
+    o.fillStyle = theme.surface; o.fillRect(0, 0, w, h);
+    const series = app.probes.map(p => Object.assign({ p }, probeSeries(p) || { xs: new Float64Array(0), ys: new Float32Array(0) }));
+    const xr = app.p1zoom ? app.p1zoom.slice() : [0, res.frameT[res.nf - 1]];
+    let lo = Infinity, hi = -Infinity;
+    for (const s of series) for (let f = 0; f < s.ys.length; f++) {
+      const v = s.ys[f], t = s.xs[f];
+      if (isFinite(v) && t >= xr[0] && t <= xr[1]) { if (v < lo) lo = v; if (v > hi) hi = v; }
+    }
+    if (!isFinite(lo)) { lo = res.P.Tmin; hi = res.P.Tmax; }
+    const pad = Math.max(2, 0.04 * (hi - lo));
+    const yr = [Math.floor((lo - pad) / 5) * 5, Math.ceil((hi + pad) / 5) * 5];
+    const F = plotFrame(w, h);
+    const ax = drawAxes(o, F, xr, yr, 'time [s]', 'temperature [°C]');
+    o.save(); o.beginPath(); o.rect(F.l, F.t, ax.pw, ax.ph); o.clip();
+    o.lineWidth = 2; o.lineJoin = 'round'; o.lineCap = 'round';
+    for (const s of series) {
+      o.strokeStyle = theme.series[s.p.slot]; o.beginPath();
+      let pen = false;
+      for (let f = 0; f < s.ys.length; f++) {
+        const v = s.ys[f];
+        if (!isFinite(v)) { pen = false; continue; }
+        const px = ax.sx(s.xs[f]), py = ax.sy(v);
+        if (!pen) { o.moveTo(px, py); pen = true; } else o.lineTo(px, py);
+      }
+      o.stroke();
+    }
+    o.restore();
+    plotCache.p1 = { key, img: off, ax, F, xr, yr, series };
+  }
+  const c = plotCache.p1;
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(c.img, 0, 0, w, h);
+  // current time marker
+  const tNow = res.frameT[app.frame];
+  if (tNow >= c.xr[0] && tNow <= c.xr[1]) {
+    const x = Math.round(c.ax.sx(tNow)) + 0.5;
+    ctx.strokeStyle = theme.ink2; ctx.globalAlpha = 0.6; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, c.F.t); ctx.lineTo(x, c.F.t + c.ax.ph); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  if (p1drag && Math.abs(p1drag.x1 - p1drag.x0) > 3) {
+    ctx.fillStyle = theme.ink; ctx.globalAlpha = 0.08;
+    ctx.fillRect(Math.min(p1drag.x0, p1drag.x1), c.F.t, Math.abs(p1drag.x1 - p1drag.x0), c.ax.ph); ctx.globalAlpha = 1;
+  }
+  if (app.p1zoom) { ctx.fillStyle = theme.muted; ctx.font = '11px system-ui'; ctx.textAlign = 'right'; ctx.fillText('zoomed - double-click to reset', c.F.l + c.ax.pw - 4, c.F.t + 24); ctx.textAlign = 'left'; }
+  // end-of-print marker label
+  const xe = c.ax.sx(res.P.tEnd);
+  if (xe > c.F.l + 30 && xe < c.F.l + c.ax.pw - 10) {
+    ctx.strokeStyle = theme.axis; ctx.beginPath(); ctx.moveTo(Math.round(xe) + 0.5, c.F.t); ctx.lineTo(Math.round(xe) + 0.5, c.F.t + c.ax.ph); ctx.stroke();
+    ctx.fillStyle = theme.muted; ctx.font = '11px system-ui'; ctx.textAlign = 'right'; ctx.fillText('print end', xe - 4, c.F.t + 10); ctx.textAlign = 'left';
+  }
+  if (plot1Hover !== null) {
+    const t = plot1Hover;
+    const hx = Math.round(c.ax.sx(t)) + 0.5;
+    ctx.strokeStyle = theme.muted; ctx.beginPath(); ctx.moveTo(hx, c.F.t); ctx.lineTo(hx, c.F.t + c.ax.ph); ctx.stroke();
+    for (const s of c.series) {
+      if (!s.xs.length) continue;
+      const f = nearestIndex(s.xs, t), v = s.ys[f]; if (!isFinite(v)) continue;
+      const px = c.ax.sx(s.xs[f]);
+      ctx.beginPath(); ctx.arc(px, c.ax.sy(v), 5, 0, 2 * Math.PI); ctx.fillStyle = theme.surface; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, c.ax.sy(v), 3.5, 0, 2 * Math.PI); ctx.fillStyle = theme.series[s.p.slot]; ctx.fill();
+    }
+  }
+}
+let plot1Hover = null, plot2Hover = null, p1drag = null;
+function renderPlot2() {
+  const cv = $('plot2'); const { ctx, w, h } = setupCanvas(cv);
+  const res = app.result;
+  if (!res) { emptyPlot(ctx, w, h, 'Run the simulation to see vertical profiles.'); return; }
+  const P = res.P, geo = geometryFor(P.NL, P.NW, P.NH), off = app.frame * P.N;
+  ctx.fillStyle = theme.surface; ctx.fillRect(0, 0, w, h);
+  const Hz = P.NH * P.hl;
+  const TaAt = (z) => P.TaOn ? (P.Tp - P.TaInf) * Math.exp(-z / P.lc) + P.TaInf : P.TaInf;
+  if (!res.p2range) { // fixed over the whole run so the axis does not jump while scrubbing
+    let lo = Math.min(TaAt(0), TaAt(Hz)), hi = Math.max(TaAt(0), TaAt(Hz));
+    for (const p of app.probes) for (let k = 1; k <= P.NH; k++) {
+      const e = geo.at(p.i, p.j, k); if (e < 0) continue;
+      for (let f = 0; f < res.nf; f++) { const T = res.frames[f * P.N + e]; if (T < lo) lo = T; if (T > hi) hi = T; }
+    }
+    const pad = Math.max(2, 0.05 * (hi - lo));
+    res.p2range = [Math.floor((lo - pad) / 5) * 5, Math.ceil((hi + pad) / 5) * 5];
+  }
+  const xr = res.p2range;
+  const F = plotFrame(w, h);
+  const ax = drawAxes(ctx, F, xr, [0, Hz], 'temperature [°C]', 'height z [mm]');
+  // swap: x = temperature, y = height
+  ctx.save(); ctx.beginPath(); ctx.rect(F.l, F.t, ax.pw, ax.ph); ctx.clip();
+  // air temperature Ta(z)
+  ctx.strokeStyle = theme.muted; ctx.lineWidth = 1.25; ctx.beginPath();
+  for (let n = 0; n <= 60; n++) {
+    const z = Hz * n / 60;
+    const Ta = TaAt(z);
+    if (n === 0) ctx.moveTo(ax.sx(Ta), ax.sy(z)); else ctx.lineTo(ax.sx(Ta), ax.sy(z));
+  }
+  ctx.stroke();
+  ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  const cols = [];
+  for (const p of app.probes) {
+    const pts = [];
+    if (geo.at(p.i, p.j, 1) < 0) continue;
+    for (let k = 1; k <= P.NH; k++) { const e = geo.at(p.i, p.j, k); const T = res.frames[off + e]; if (isFinite(T)) pts.push([T, k * P.hl, k]); }
+    cols.push({ p, pts });
+    ctx.strokeStyle = theme.series[p.slot]; ctx.beginPath();
+    pts.forEach((q, n) => { if (n === 0) ctx.moveTo(ax.sx(q[0]), ax.sy(q[1])); else ctx.lineTo(ax.sx(q[0]), ax.sy(q[1])); });
+    ctx.stroke();
+    if (pts.length === 1) { ctx.beginPath(); ctx.arc(ax.sx(pts[0][0]), ax.sy(pts[0][1]), 4, 0, 2 * Math.PI); ctx.fillStyle = theme.series[p.slot]; ctx.fill(); }
+  }
+  ctx.restore();
+  plotCache.p2 = { ax, F, cols, P };
+  if (plot2Hover !== null) {
+    const y = Math.round(ax.sy(plot2Hover * P.hl)) + 0.5;
+    ctx.strokeStyle = theme.muted; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(F.l, y); ctx.lineTo(F.l + ax.pw, y); ctx.stroke();
+    for (const c of cols) { const q = c.pts.find(q => q[2] === plot2Hover); if (!q) continue;
+      ctx.beginPath(); ctx.arc(ax.sx(q[0]), y, 5, 0, 2 * Math.PI); ctx.fillStyle = theme.surface; ctx.fill();
+      ctx.beginPath(); ctx.arc(ax.sx(q[0]), y, 3.5, 0, 2 * Math.PI); ctx.fillStyle = theme.series[c.p.slot]; ctx.fill(); }
+  }
+}
+function renderLegends() {
+  const l1 = $('legend1'), l2 = $('legend2');
+  l1.textContent = ''; l2.textContent = '';
+  const res = app.result;
+  const P = res ? res.P : (app.cur && app.cur.P);
+  if (!P) return;
+  const geo = geometryFor(P.NL, P.NW, P.NH);
+  for (const p of app.probes) {
+    const inside = geo.at(p.i, p.j, p.k) >= 0;
+    let note = '';
+    if (!res) note = ' - recorded on the next run';
+    else if (!inside) note = ' - outside this run';
+    else { const sr = probeSeries(p); if (sr && !sr.full) note = ' - sampled every ' + sr.stride + ' steps'; }
+    const mk = (withX, text) => {
+      const s = document.createElement('span'); s.className = 'key';
+      const ln = document.createElement('span'); ln.className = 'line'; ln.style.background = theme.series[p.slot];
+      const t = document.createElement('span'); t.textContent = text;
+      s.append(ln, t);
+      if (withX) { const b = document.createElement('button'); b.className = 'x'; b.type = 'button'; b.textContent = '×'; b.title = 'Remove probe'; b.setAttribute('aria-label', 'Remove probe P' + (p.slot + 1)); b.onclick = () => removeProbe(p.slot); s.append(b); }
+      return s;
+    };
+    l1.append(mk(true, 'P' + (p.slot + 1) + ' (' + p.i + ', ' + p.j + ', ' + p.k + ')  x = ' + fmt(p.i * P.dx_mm, 2) + ', z = ' + fmt(p.k * P.hl, 2) + ' mm' + note));
+    if (res && inside) l2.append(mk(false, 'P' + (p.slot + 1) + ' column (' + p.i + ', ' + p.j + ')'));
+  }
+  if (!res) return;
+  const s = document.createElement('span'); s.className = 'key';
+  const ln = document.createElement('span'); ln.className = 'line'; ln.style.background = theme.muted;
+  const t = document.createElement('span'); t.textContent = 'air Ta(z)';
+  s.append(ln, t); l2.append(s);
+}
+
+/* =====================================================================
+   EVENTS
+   ===================================================================== */
+function bindEvents() {
+  document.querySelectorAll('.inputs input, .inputs select').forEach(el => {
+    if (el.type === 'file') return;
+    el.addEventListener('input', () => onInputsChanged(true));
+    el.addEventListener('change', () => onInputsChanged(true));
+  });
+  for (const key of ['rho', 'cp']) {
+    $(key + 'Pick').onclick = () => $(key + 'File').click();
+    $(key + 'File').onchange = async (ev) => {
+      const f = ev.target.files[0]; if (!f) return;
+      try {
+        const tb = parseTable(await f.text());
+        tables[key] = Object.assign({ name: f.name }, tb);
+        $(key + 'Name').textContent = f.name + ' (' + tb.T.length + ' pts, ' + fmt(tb.T[0], 1) + '…' + fmt(tb.T[tb.T.length - 1], 1) + ' °C)';
+        $(key + 'Name').title = $(key + 'Name').textContent;
+      } catch (e) { tables[key] = null; $(key + 'Name').textContent = 'no file'; setMsg('Could not read ' + f.name + ': ' + e.message, 'err'); return; }
+      ev.target.value = '';
+      onInputsChanged(true);
+    };
+  }
+  $('btnRun').onclick = startRun;
+  $('btnCancel').onclick = cancelRun;
+  $('btnEstimate').onclick = () => {
+    const r = readParams(); if (!r.P) { setMsg(r.errors.join('\n'), 'err'); return; }
+    const P = r.P;
+    setMsg('Elements N = ' + P.N.toLocaleString() + ' (' + P.NL + ' × ' + P.NW + ' × ' + P.NH + '), time steps = ' + P.S.toLocaleString() + '.\n'
+      + 'Stored data: ' + P.nFrames.toLocaleString() + ' frames × ' + P.N.toLocaleString() + ' elements = ' + fmtBytes(P.bytes) + (P.stride > 1 ? ' (every ' + P.stride + ' steps, to stay under 160 MB)' : ' (every step)') + '.\n'
+      + 'Work: ' + fmtCount(P.updates) + ' element updates, estimated ' + fmtTime(P.updates / app.rate) + ' at ' + fmtCount(app.rate) + ' updates/s.');
+  };
+  $('btnStab').onclick = () => {
+    const r = readParams(); if (!r.P) { setMsg(r.errors.join('\n'), 'err'); return; }
+    const P = r.P;
+    const okTxt = P.stabNo <= 0.5 ? 'stable' : 'UNSTABLE';
+    setMsg('Stability number Δt/(ρ·cp)·(λx/Δx² + λy/Δy² + λz/Δz²) = ' + fmt(P.stabNo, 4) + ' → ' + okTxt + ' (limit 0.5, Eq. 5' + (P.lut ? ', smallest ρ·cp in the temperature range' : '') + ').'
+      + (P.stabNo > 0.5 ? '\nOptions: switch on "Optimise for stability" (sets Δx to the value that minimises this number), or scale L and v up together (inter-layer time similarity rule). Lowering the speed makes it worse, because Δt = Δx/v grows.' : ''), P.stabNo <= 0.5 ? '' : 'err');
+  };
+  // print view hover / click
+  const cv = $('view'), tip = $('viewTip'), wrap = cv.parentElement;
+  cv.addEventListener('mousemove', (ev) => {
+    const r = cv.getBoundingClientRect(); const x = ev.clientX - r.left, y = ev.clientY - r.top;
+    const e = hitView(x, y);
+    if (e < 0) { tip.style.display = 'none'; return; }
+    tipRows(tip, viewElementInfo(e)); placeTip(tip, wrap, x, y);
+  });
+  cv.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+  cv.addEventListener('click', (ev) => {
+    if (app.running) return;
+    const st = currentViewState(); if (!st) return;
+    const r = cv.getBoundingClientRect(); const e = hitView(ev.clientX - r.left, ev.clientY - r.top);
+    if (e < 0) return;
+    toggleProbeAt(st.geo.oi[e], st.geo.oj[e], st.geo.ok[e]);
+    const info = viewElementInfo(e); if (info) tipRows(tip, info);
+  });
+  $('btnAddProbe').onclick = () => {
+    const st = currentViewState(); if (!st) { setMsg('Fix the inputs first.', 'warn'); return; }
+    const P = st.P;
+    const i = parseInt($('pi').value), j = parseInt($('pj').value), k = parseInt($('pk').value);
+    if (!(i >= 1 && i <= P.NL && j >= 1 && j <= P.NW && k >= 1 && k <= P.NH)) { setMsg('Probe indices must be within i 1…' + P.NL + ', j 1…' + P.NW + ', k 1…' + P.NH + '.', 'warn'); return; }
+    if (addProbe(i, j, k)) { invalidatePlots(); renderAll(); }
+  };
+  // plot hovers
+  const p1 = $('plot1'), t1 = $('tip1');
+  p1.addEventListener('mousemove', (ev) => {
+    const c = plotCache.p1, res = app.result; if (!c || !res) return;
+    const r = p1.getBoundingClientRect(); const x = ev.clientX - r.left, y = ev.clientY - r.top;
+    if (x < c.F.l || x > c.F.l + c.ax.pw) { plot1Hover = null; t1.style.display = 'none'; renderPlot1(); return; }
+    let t = c.xr[0] + (x - c.F.l) / c.ax.pw * (c.xr[1] - c.xr[0]);
+    const s0 = c.series.find(s => s.xs.length);
+    if (s0) t = s0.xs[nearestIndex(s0.xs, t)];
+    plot1Hover = t;
+    const rows = [{ sec: 't = ' + t.toFixed(3) + ' s' }];
+    for (const s of c.series) {
+      if (!s.xs.length) { rows.push({ color: theme.series[s.p.slot], val: 'outside part', sec: 'P' + (s.p.slot + 1) }); continue; }
+      const v = s.ys[nearestIndex(s.xs, t)];
+      rows.push({ color: theme.series[s.p.slot], val: isFinite(v) ? v.toFixed(1) + ' °C' : 'not printed yet', sec: 'P' + (s.p.slot + 1) });
+    }
+    tipRows(t1, rows); placeTip(t1, p1.parentElement, x, y); renderPlot1();
+  });
+  p1.addEventListener('mouseleave', () => { plot1Hover = null; p1drag = null; t1.style.display = 'none'; renderPlot1(); });
+  // drag to zoom the time axis, click to jump to a time, double-click to reset
+  p1.addEventListener('mousedown', (ev) => {
+    const c = plotCache.p1; if (!c || !app.result) return;
+    const r = p1.getBoundingClientRect(); const x = clamp(ev.clientX - r.left, c.F.l, c.F.l + c.ax.pw);
+    p1drag = { x0: x, x1: x };
+    ev.preventDefault();
+  });
+  p1.addEventListener('mousemove', (ev) => {
+    if (!p1drag) return;
+    const c = plotCache.p1; const r = p1.getBoundingClientRect();
+    p1drag.x1 = clamp(ev.clientX - r.left, c.F.l, c.F.l + c.ax.pw);
+  });
+  p1.addEventListener('mouseup', () => {
+    const c = plotCache.p1, d = p1drag; p1drag = null;
+    if (!c || !d) return;
+    const toT = (x) => c.xr[0] + (x - c.F.l) / c.ax.pw * (c.xr[1] - c.xr[0]);
+    if (Math.abs(d.x1 - d.x0) > 5) {
+      const a = toT(Math.min(d.x0, d.x1)), b = toT(Math.max(d.x0, d.x1));
+      if (b - a > 1e-6) { app.p1zoom = [a, b]; invalidatePlots(); renderPlot1(); }
+    } else if (plot1Hover !== null) setFrame(frameAtTime(plot1Hover));
+  });
+  p1.addEventListener('dblclick', () => { app.p1zoom = null; invalidatePlots(); renderPlot1(); });
+  const p2 = $('plot2'), t2 = $('tip2');
+  p2.addEventListener('mousemove', (ev) => {
+    const c = plotCache.p2, res = app.result; if (!c || !res) return;
+    const r = p2.getBoundingClientRect(); const x = ev.clientX - r.left, y = ev.clientY - r.top;
+    if (y < c.F.t || y > c.F.t + c.ax.ph) { plot2Hover = null; t2.style.display = 'none'; renderPlot2(); return; }
+    const z = (c.F.t + c.ax.ph - y) / c.ax.ph * (c.P.NH * c.P.hl);
+    plot2Hover = clamp(Math.round(z / c.P.hl), 1, c.P.NH);
+    const rows = [{ sec: 'layer ' + plot2Hover + ', z = ' + fmt(plot2Hover * c.P.hl, 3) + ' mm' }];
+    for (const col of c.cols) { const q = col.pts.find(q => q[2] === plot2Hover); rows.push({ color: theme.series[col.p.slot], val: q ? q[0].toFixed(1) + ' °C' : 'not printed', sec: 'P' + (col.p.slot + 1) }); }
+    const P = c.P; const zz = plot2Hover * P.hl; const Ta = P.TaOn ? (P.Tp - P.TaInf) * Math.exp(-zz / P.lc) + P.TaInf : P.TaInf;
+    rows.push({ color: theme.muted, val: Ta.toFixed(1) + ' °C', sec: 'air Ta' });
+    tipRows(t2, rows); placeTip(t2, p2.parentElement, x, y); renderPlot2();
+  });
+  p2.addEventListener('mouseleave', () => { plot2Hover = null; t2.style.display = 'none'; renderPlot2(); });
+  // time controls
+  $('slider').addEventListener('input', () => { stopPlay(); setFrame(parseInt($('slider').value)); });
+  $('btnPlay').onclick = () => app.playing ? stopPlay() : startPlay();
+  // save / load / export
+  $('btnSave').onclick = saveData;
+  $('btnLoad').onclick = () => $('fileLoad').click();
+  $('fileLoad').onchange = async (ev) => { const f = ev.target.files[0]; ev.target.value = ''; if (f) await loadData(f); };
+  $('btnCsvProbe').onclick = exportProbeCsv;
+  $('btnCsvFrame').onclick = exportFrameCsv;
+  // resize + theme
+  const ro = new ResizeObserver(() => { invalidatePlots(); renderAll(); });
+  ro.observe($('view')); ro.observe($('plot1')); ro.observe($('plot2'));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readTheme(); drawHeatbar(); invalidatePlots(); renderAll(); });
+}
+function startPlay() {
+  const res = app.result; if (!res) return;
+  if (app.frame >= res.nf - 1) setFrame(0);
+  app.playing = true; $('btnPlay').textContent = '❚❚ Pause';
+  let last = performance.now();
+  const tick = (now) => {
+    if (!app.playing) return;
+    const dt = (now - last) / 1000; last = now;
+    app.simTime += dt * parseFloat($('speed').value);
+    const end = res.frameT[res.nf - 1];
+    if (app.simTime >= end) { setFrame(res.nf - 1); stopPlay(); return; }
+    const f = frameAtTime(app.simTime);
+    if (f !== app.frame) { app.frame = f; $('slider').value = String(f); renderAll(); }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+function stopPlay() { app.playing = false; $('btnPlay').textContent = '▶ Play'; }
+
+/* =====================================================================
+   SAVE / LOAD / EXPORT
+   ===================================================================== */
+function baseName() { return ($('fname').value || 'FDM-temp_run').replace(/[^\w.\-]+/g, '_'); }
+function saveData() {
+  const res = app.result; if (!res) return;
+  const P = Object.assign({}, res.P); delete P.lut;
+  const pr = res.probeRec || { E: [], n: 0, stride: 1, data: new Float32Array(0), M: new Int32Array(0) };
+  const header = { format: 'FDM-temp', version: 1, ui: app.resultUi || uiValues(), tables: app.resultTables || tables, P, nf: res.nf, N: res.P.N, status: res.status, lastM: res.lastM,
+    probes: app.probes, probeE: pr.E, probeN: pr.n, probeStride: pr.stride };
+  let json = JSON.stringify(header);
+  const enc = new TextEncoder();
+  let hb = enc.encode(json);
+  const padLen = (4 - ((12 + hb.length) % 4)) % 4;
+  if (padLen) hb = enc.encode(json + ' '.repeat(padLen));
+  const head = new ArrayBuffer(12); const dv = new DataView(head);
+  'FDMTEMP1'.split('').forEach((c, n) => dv.setUint8(n, c.charCodeAt(0)));
+  dv.setUint32(8, hb.length, true);
+  const blob = new Blob([head, hb, res.frames, res.frameM, pr.data, pr.M], { type: 'application/octet-stream' });
+  download(baseName() + '.fdmtemp', blob);
+  setMsg('Saved ' + baseName() + '.fdmtemp (' + fmtBytes(blob.size) + ') to your downloads folder.');
+}
+async function loadData(file) {
+  try {
+    const buf = await file.arrayBuffer(); const dv = new DataView(buf);
+    const magic = String.fromCharCode(...new Uint8Array(buf, 0, 8));
+    if (magic !== 'FDMTEMP1' && magic !== 'T4F3WEB1') throw new Error('not an FDM-temp data file');
+    const hl = dv.getUint32(8, true);
+    const header = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 12, hl)));
+    const N = header.N, nf = header.nf;
+    const fOff = 12 + hl;
+    const frames = new Float32Array(buf.slice(fOff, fOff + nf * N * 4));
+    const frameM = new Int32Array(buf.slice(fOff + nf * N * 4, fOff + nf * N * 4 + nf * 4));
+    let pOff = fOff + nf * N * 4 + nf * 4;
+    const pn = header.probeN || 0, pE = header.probeE || [];
+    const pData = new Float32Array(buf.slice(pOff, pOff + pE.length * pn * 4)); pOff += pE.length * pn * 4;
+    const pM = new Int32Array(buf.slice(pOff, pOff + pn * 4));
+    const probeRec = { E: pE, data: pData, M: pM, n: pn, stride: header.probeStride || 1 };
+    if (Array.isArray(header.probes)) app.probes = header.probes.map(p => ({ i: p.i, j: p.j, k: p.k, slot: p.slot }));
+    const P = header.P;
+    const frameT = new Float64Array(nf); for (let f = 0; f < nf; f++) frameT[f] = frameM[f] * P.dt;
+    stopPlay();
+    tables.rho = header.tables && header.tables.rho || null; tables.cp = header.tables && header.tables.cp || null;
+    $('rhoName').textContent = tables.rho ? tables.rho.name : 'no file'; $('cpName').textContent = tables.cp ? tables.cp.name : 'no file';
+    setUiValues(header.ui);
+    app.resultUi = header.ui; app.resultTables = { rho: tables.rho, cp: tables.cp };
+    setResult({ P, frames, frameM, frameT, nf, status: header.status, lastM: header.lastM, elapsed: 0, probeRec });
+    onInputsChanged(false);
+    setMsg('Loaded ' + file.name + ': ' + N.toLocaleString() + ' elements, ' + nf.toLocaleString() + ' frames' + (header.status !== 'done' ? ' (partial run: ' + header.status + ')' : '') + '.');
+  } catch (e) { setMsg('Could not load ' + file.name + ': ' + e.message, 'err'); }
+}
+function csvHeader(P) {
+  return '# FDM-temp export (T4F3 model, Zhang et al. 2022, doi:10.1007/s40964-022-00271-0)\n# L,W,H [mm] = ' + P.L + ',' + P.W + ',' + P.H + '; NL,NW,NH = ' + P.NL + ',' + P.NW + ',' + P.NH + '; dx = ' + P.dx_mm + ' mm; dt = ' + P.dt + ' s\n'
+    + '# Tn = ' + P.Tn + ', Tp = ' + P.Tp + ', Tinf = ' + P.Tinf + ' C; v = ' + P.v + ' mm/s; h = ' + P.h + ' -> ' + P.hAfter + ' W/m2/K; eps = ' + P.eps + '; lambda = ' + P.lam + ' (' + P.ry + ', ' + P.rz + ')\n';
+}
+function exportProbeCsv() {
+  const res = app.result; if (!res || !app.probes.length) { setMsg('No probes to export.', 'warn'); return; }
+  const P = res.P;
+  const list = app.probes.map(p => ({ p, s: probeSeries(p) })).filter(o => o.s);
+  // time base: the probe record (every step) when available, else the stored frames
+  const base = list.find(o => o.s.xs !== res.frameT) || list[0];
+  const xs = base.s.xs;
+  let out = csvHeader(P) + 'time_s,' + list.map(o => 'P' + (o.p.slot + 1) + '_i' + o.p.i + '_j' + o.p.j + '_k' + o.p.k + '_C').join(',') + '\n';
+  const look = list.map(o => {
+    if (o.s.xs === xs) return (f) => o.s.ys[f];
+    const map = new Map(); o.s.xs.forEach((t, n) => map.set(t.toFixed(9), n));
+    return (f) => { const n = map.get(xs[f].toFixed(9)); return n === undefined ? NaN : o.s.ys[n]; };
+  });
+  const rows = [];
+  for (let f = 0; f < xs.length; f++) rows.push(xs[f].toFixed(5) + ',' + look.map(g => { const v = g(f); return isFinite(v) ? v.toFixed(3) : ''; }).join(','));
+  download(baseName() + '_probes.csv', new Blob([out + rows.join('\n') + '\n'], { type: 'text/csv' }));
+}
+function exportFrameCsv() {
+  const res = app.result; if (!res) return;
+  const P = res.P, geo = geometryFor(P.NL, P.NW, P.NH), off = app.frame * P.N;
+  let out = csvHeader(P) + '# frame at t = ' + res.frameT[app.frame].toFixed(5) + ' s\ni,j,k,x_mm,y_mm,z_mm,T_C\n';
+  for (let k = 1; k <= P.NH; k++) for (let j = 1; j <= P.NW; j++) for (let i = 1; i <= P.NL; i++) {
+    const e = geo.at(i, j, k), T = res.frames[off + e];
+    if (isFinite(T)) out += i + ',' + j + ',' + k + ',' + (i * P.dx_mm).toFixed(4) + ',' + (j * P.w).toFixed(4) + ',' + (k * P.hl).toFixed(4) + ',' + T.toFixed(3) + '\n';
+  }
+  download(baseName() + '_t' + res.frameT[app.frame].toFixed(2) + 's.csv', new Blob([out], { type: 'text/csv' }));
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+readTheme();
+bindEvents();
+onInputsChanged();
+</script>
+</body>
+</html>
